@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.workbuddy/
+_*
+.DS_Store
+Thumbs.db
