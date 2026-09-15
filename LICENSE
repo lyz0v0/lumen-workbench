@@ -1,21 +1,24 @@
-MIT License
+Copyright (c) 2026 lyz0v0. All Rights Reserved.
 
-Copyright (c) 2026 lyz0v0
+本作品（包括源代码、资源文件及其编译产物）受著作权法保护。
+作者保留所有权利，本作品不属于开源软件。
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+一、允许的使用方式
+  1. 在 GitHub 上在线浏览、阅读本仓库代码，用于个人学习；
+  2. 下载后仅限本人本地运行、体验本软件。
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+二、未经作者事先书面许可，任何单位或个人不得实施下列行为：
+  1. 复制、转载、镜像本仓库的全部或部分内容；
+  2. 修改、二次开发、衍生创作；
+  3. 以任何形式再分发、发布、上传至其他仓库或平台；
+  4. 将本作品全部或部分用于商业用途（包括但不限于出售、
+     SaaS 化、广告变现、打包进商业产品）；
+  5. 移除或修改本声明及作者署名。
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+三、免责声明
+  本作品按"现状"提供，不附带任何明示或默示的担保。
+  使用本作品产生的任何后果由使用者自行承担。
+
+四、授权联系
+  如需获得上述限制行为之一的书面授权，请联系：
+  rijinwe7396@163.com
