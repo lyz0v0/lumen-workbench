@@ -60,4 +60,6 @@ npm start
 
 ## License
 
-[MIT](LICENSE)
+本仓库代码不使用开源协议，保留所有权利（All Rights Reserved）。详见 [LICENSE](LICENSE)。
+
+未经作者书面许可，**禁止**复制、修改、二次分发、二次开发及任何商业用途；仅允许查看与本仓库在线内容的学习性阅读。
