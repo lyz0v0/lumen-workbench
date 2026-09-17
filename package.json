@@ -1,7 +1,7 @@
 {
   "name": "lumen-workbench",
-  "version": "0.9.0",
-  "description": "Lumen 工作台 — 本地优先的单文件 AI 工具箱（Electron 最小壳）",
+  "version": "0.12.0",
+  "description": "Lumen 工作台 — 本地优先的 AI 工具箱（三文件，浏览器直开 / Electron 最小壳）",
   "main": "shell/main.js",
   "scripts": {
     "start": "electron shell"
@@ -9,5 +9,5 @@
   "devDependencies": {
     "electron": "^33.4.11"
   },
-  "license": "MIT"
+  "license": "SEE LICENSE IN LICENSE"
 }
