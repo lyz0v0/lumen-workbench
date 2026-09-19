@@ -1,13 +1,13 @@
 {
-  "name": "lumen-workbench-app",
+  "name": "lumen-workbench-shell",
   "version": "0.13.5",
   "private": true,
-  "description": "Lumen 本地 AI 工作台 —— 多文件源码工程，构建产物为压缩混淆后的 dist",
+  "description": "Lumen 工作台 Electron 桌面壳：npm install 后 npm start 以桌面窗口运行（页面文件在仓库根）",
+  "main": "shell/main.js",
   "scripts": {
-    "build": "node build.mjs",
-    "dev": "node build.mjs --dev"
+    "start": "electron ."
   },
   "devDependencies": {
-    "esbuild": "^0.24.2"
+    "electron": "^33.2.1"
   }
 }
