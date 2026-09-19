@@ -1,7 +1,6 @@
 /* Lumen 工作台 · 最小 Electron 壳
- * 只做三件事：开窗口加载单文件原型、外链交给系统浏览器、退出即关。
- * AI 请求代发（无 CORS）等 BYOK 工具实装时再加 IPC，这里保持最小。 */
-const { app, BrowserWindow, Menu, shell } = require('electron');
+ * 只做四件事：开窗口加载工作台、外链交给系统浏览器、代发联网请求（绕 CORS）、退出即关。 */
+const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
 
 const INDEX_HTML = path.join(__dirname, '..', 'index.html');
@@ -22,7 +21,8 @@ function createWindow() {
     autoHideMenuBar: true,
     show: true,
     webPreferences: {
-      spellcheck: false
+      spellcheck: false,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
@@ -65,6 +65,88 @@ function createWindow() {
 }
 
 Menu.setApplicationMenu(null);
+
+/* 联网代发：工作台以 file:// 打开时，页面里的 fetch 会被浏览器跨域策略拦掉；
+ * 交主进程直连可以绕开（快递查询、后续 AI 请求都走这条通道）。只放行 http/https。 */
+ipcMain.handle('lumen:net-fetch', async (_e, url) => {
+  const u = String(url || '');
+  if (!/^https?:\/\//i.test(u)) return { ok: false, status: 0, error: '只允许 http/https 请求' };
+  try {
+    const r = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (Lumen Workbench)' } });
+    const text = await r.text();
+    const headers = {};
+    for (const k of ['ratelimit', 'retry-after', 'x-ratelimit-remaining']) {
+      const v = r.headers.get(k);
+      if (v) headers[k] = v;
+    }
+    trace('net-fetch ' + r.status + ' ' + u.slice(0, 90));
+    return { ok: r.ok, status: r.status, text, headers };
+  } catch (e) {
+    trace('net-fetch ERR ' + u.slice(0, 90) + ' ' + ((e && e.message) || e));
+    return { ok: false, status: 0, error: String((e && e.message) || e) };
+  }
+});
+
+/* AI 请求代发：POST + 自定义请求头（Authorization 等）+ SSE 流式转发。
+ * 渲染进程只负责拼 body，密钥与请求都由主进程发出，页面侧不产生跨域请求。 */
+const chatAborts = new Map();
+
+ipcMain.handle('lumen:chat', async (event, payload) => {
+  const p = payload || {};
+  const url = String(p.url || '');
+  if (!/^https?:\/\//i.test(url)) return { ok: false, status: 0, error: '只允许 http/https 请求' };
+
+  const id = String(p.id || Date.now());
+  const ctl = new AbortController();
+  chatAborts.set(id, ctl);
+
+  try {
+    const r = await fetch(url, {
+      method: p.method || 'POST',
+      headers: p.headers || {},
+      body: p.body,
+      signal: ctl.signal
+    });
+    const ctype = String(r.headers.get('content-type') || '');
+    const sse = /text\/event-stream/i.test(ctype);
+
+    if (!r.ok) {
+      const text = await r.text();
+      trace('chat ' + r.status + ' ' + url.slice(0, 80));
+      return { ok: false, status: r.status, text, sse, error: 'HTTP ' + r.status };
+    }
+    /* 非流式（或服务端不支持流）→ 整体返回 */
+    if (!p.stream || !sse || !r.body) {
+      const text = await r.text();
+      trace('chat ' + r.status + ' (whole ' + text.length + 'B)');
+      return { ok: true, status: r.status, text, sse: false };
+    }
+    /* 流式：边读边推给渲染进程 */
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let all = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = dec.decode(value, { stream: true });
+      all += chunk;
+      if (!event.sender.isDestroyed()) event.sender.send('lumen:chat-delta', { id, chunk });
+    }
+    trace('chat ' + r.status + ' (stream ' + all.length + 'B)');
+    return { ok: true, status: r.status, text: all, sse: true };
+  } catch (e) {
+    const aborted = ctl.signal.aborted;
+    trace('chat ERR ' + url.slice(0, 80) + ' ' + ((e && e.message) || e));
+    return { ok: false, status: 0, aborted, error: String((e && e.message) || e) };
+  } finally {
+    chatAborts.delete(id);
+  }
+});
+
+ipcMain.on('lumen:chat-abort', (_e, id) => {
+  const c = chatAborts.get(String(id || ''));
+  if (c) c.abort();
+});
 
 /* 本地工具用不上 GPU 加速：禁 GPU 并把渲染并入主进程，避免 GPU 子进程在无显卡环境下崩溃。
  * no-sandbox：本机（无显卡 VM）渲染进程沙箱起不来；应用只加载本地文件、外链全部交系统浏览器，风险可控。 */
