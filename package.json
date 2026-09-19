@@ -1,13 +1,13 @@
 {
-  "name": "lumen-workbench",
-  "version": "0.13.0",
-  "description": "Lumen 工作台 — 本地优先的 AI 工具箱（三文件，浏览器直开 / Electron 最小壳）",
-  "main": "shell/main.js",
+  "name": "lumen-workbench-app",
+  "version": "0.13.5",
+  "private": true,
+  "description": "Lumen 本地 AI 工作台 —— 多文件源码工程，构建产物为压缩混淆后的 dist",
   "scripts": {
-    "start": "electron shell"
+    "build": "node build.mjs",
+    "dev": "node build.mjs --dev"
   },
   "devDependencies": {
-    "electron": "^33.4.11"
-  },
-  "license": "SEE LICENSE IN LICENSE"
+    "esbuild": "^0.24.2"
+  }
 }
