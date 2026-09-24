@@ -5,7 +5,8 @@
   "description": "Lumen 工作台 Electron 桌面壳：npm install 后 npm start 以桌面窗口运行（页面文件在仓库根）",
   "main": "shell/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dev": "electron . --lumen-dev"
   },
   "devDependencies": {
     "electron": "^33.2.1"
