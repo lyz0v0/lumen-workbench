@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen 工作台 · 壳状态</title>
+<style>
+:root{
+  --bg:#F6F6F4; --card:#FFFFFF; --line:#E4E3DE; --fg:#2C2C2A; --muted:#6E6D67;
+  --ok:#1F7A4D; --warn:#8A5A00; --bad:#B3352F; --accent:#2C2C2A;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#1B1B19; --card:#232321; --line:#3A3A37; --fg:#EDECE8; --muted:#A3A19A;
+         --ok:#5DCAA5; --warn:#FAC775; --bad:#F09595; --accent:#EDECE8; }
+}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;background:var(--bg);color:var(--fg);
+  font:13px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+h1{font-size:15px;font-weight:500;margin:0 0 4px}
+.sub{color:var(--muted);font-size:12px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.wide{grid-column:1/-1}
+.k{color:var(--muted);font-size:12px;margin-bottom:4px}
+.v{font-size:14px;font-weight:500;word-break:break-all}
+.mono{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 18px}
+button{font:inherit;padding:7px 14px;border-radius:8px;border:1px solid var(--line);
+  background:var(--card);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;
+  border:1px solid var(--line);margin:0 6px 4px 0}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tag.warn{color:var(--warn);border-color:var(--warn)}
+.tag.bad{color:var(--bad);border-color:var(--bad)}
+pre{margin:0;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:12px;max-height:200px;overflow:auto;font-family:ui-monospace,Consolas,monospace;
+  font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body>
+<h1>Lumen 工作台 · 壳状态</h1>
+<div class="sub" id="sub">正在读取…</div>
+<div class="grid" id="grid"></div>
+<div class="btns">
+  <button class="primary" id="btnRestart">重试端口服务</button>
+  <button id="btnOpen">在浏览器打开</button>
+  <button id="btnCopy">复制地址</button>
+  <button id="btnLog">打开日志文件</button>
+  <button id="btnRefresh">刷新</button>
+</div>
+<div class="k">壳日志（最近 120 行）</div>
+<pre id="log">…</pre>
+<script>
+const S = window.lumenShell;
+const $ = id => document.getElementById(id);
+let last = null;
+
+const esc = s => String(s == null ? '' : s)
+  .replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function card(k, v, cls, wide) {
+  return '<div class="card' + (wide ? ' wide' : '') + '"><div class="k">' + k +
+    '</div><div class="v ' + (cls || '') + '">' + v + '</div></div>';
+}
+
+function modeHTML(st) {
+  if (st.forcedFile) return '<span class="tag warn">本地文件模式</span>已由 LUMEN_MODE=file 强制，端口服务关闭';
+  if (st.mode === 'http') return '<span class="tag ok">本地端口模式</span>浏览器打开同一地址即是同一份工作台';
+  return '<span class="tag bad">端口未就绪</span>已回落到本地文件模式，功能可用，但与浏览器不再同源';
+}
+
+function diagHTML(st) {
+  if (st.forcedFile) return '<span class="tag warn">未启用端口服务</span>';
+  if (!st.diagnostics || !st.diagnostics.length) {
+    return '<span class="tag ok">' + esc(st.wantPort) + ' 空闲，直接可用</span>';
+  }
+  return st.diagnostics.map(d => {
+    if (d.by === 'lumen') {
+      return '<span class="tag warn">' + esc(d.port) + ' 被另一个 Lumen 实例占用' +
+        (d.version ? '（v' + esc(d.version) + '）' : '') + (d.pid ? '，PID ' + esc(d.pid) : '') + '</span>';
+    }
+    if (d.by === 'other') return '<span class="tag warn">' + esc(d.port) + ' 被其它程序占用</span>';
+    return '<span class="tag bad">' + esc(d.port) + ' 被未知程序占用</span>';
+  }).join('');
+}
+
+/* 运行形态：轻量壳（无 electron-updater）还是安装版（应用内更新就绪） */
+function kindHTML(st) {
+  const k = esc(st.kind || '轻量壳');
+  return '<span class="tag ' + (st.autoUpdate ? 'ok' : '') + '">' + k + '</span>' +
+    (st.autoUpdate ? '应用内自动更新已就绪' : '更新走 GitHub 下载');
+}
+
+function render(st) {
+  last = st;
+  const ver = esc(st.version || '—') + (st.dev ? ' <span class="tag warn">dev</span>' : '');
+  $('sub').textContent = st.mode === 'http'
+    ? '端口服务运行中 · ' + st.url
+    : '端口服务未运行 · 壳内功能正常，浏览器侧需端口服务';
+  $('grid').innerHTML =
+    card('运行模式', modeHTML(st), '', true) +
+    card('运行形态', kindHTML(st)) +
+    card('壳版本', ver, 'mono') +
+    card('本地端口', st.port ? esc(st.port) : '—', 'mono') +
+    card('访问地址', st.url ? esc(st.url) : '—', 'mono') +
+    card('端口占用诊断', diagHTML(st), '', true) +
+    card('服务根目录', esc(st.serveRoot || '—'), 'mono', true) +
+    card('运行环境', 'Electron ' + esc(st.electron || '—') + ' · Chromium ' + esc(st.chrome || '—'), 'mono', true);
+  $('log').textContent = (st.log && st.log.length) ? st.log.join('\n') : '（暂无日志）';
+  $('btnOpen').disabled = !st.url;
+  $('btnCopy').disabled = !st.url;
+  $('btnLog').disabled = !st.logFile;
+}
+
+async function load() {
+  if (!S || !S.status) { $('sub').textContent = '这个页面需要在 Lumen 壳里打开'; return; }
+  try { render(await S.status()); }
+  catch (e) { $('sub').textContent = '读取失败：' + ((e && e.message) || e); }
+}
+
+$('btnRestart').onclick = async () => {
+  if (!S || !S.restartServer) return;
+  const b = $('btnRestart');
+  b.disabled = true;
+  $('sub').textContent = '正在重启端口服务…';
+  try { render(await S.restartServer()); }
+  catch (e) { $('sub').textContent = '重启失败：' + ((e && e.message) || e); }
+  b.disabled = false;
+};
+$('btnOpen').onclick = () => { if (S && last && last.url) S.openInBrowser(); };
+$('btnCopy').onclick = async () => {
+  if (!last || !last.url) return;
+  const b = $('btnCopy');
+  try { await navigator.clipboard.writeText(last.url); b.textContent = '已复制'; }
+  catch (e) { b.textContent = '复制失败'; }
+  setTimeout(() => { b.textContent = '复制地址'; }, 1200);
+};
+$('btnLog').onclick = () => { if (S && S.openLog) S.openLog(); };
+$('btnRefresh').onclick = load;
+
+load();
+</script>
+</body>
+</html>
