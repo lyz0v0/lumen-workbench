@@ -46,6 +46,20 @@
 
 各版本的更新内容见 [Releases](https://github.com/lyz0v0/lumen-workbench/releases)。
 
+## 前置要求
+
+| 运行方式 | 需要安装 | 版本要求 |
+|---|---|---|
+| 浏览器直开 | 无（现代浏览器即可：Chrome / Edge / Firefox 均可，建议近两年的版本） | — |
+| 一键启动 `setup.bat` | [Node.js](https://nodejs.org)（npm 随 Node 自带） | **Node.js 18 及以上**，推荐 LTS 版（20 / 22） |
+| Windows 安装包 | 无 | Windows 10 / 11（64 位） |
+
+其他说明：
+
+- 一键启动首次运行需联网下载 Electron（约 90 MB，国内自动走 npmmirror 镜像加速），之后离线可用
+- 安装包自带全部运行时（Electron + Chromium），装完即用，无需 Java / Python / .NET 等任何依赖
+- 系统要求：Windows 10 及以上（64 位）；浏览器方式在 macOS / Linux 上同样可用
+
 ## 运行
 
 **方式一：浏览器（最简单）**
@@ -54,7 +68,7 @@
 
 **方式二：一键启动（Electron 桌面窗口）**
 
-双击仓库里的 **`setup.bat`**：首次运行会自动通过 npm 安装 Electron（国内自动走 npmmirror 镜像加速），装完自动打开桌面窗口；之后每次双击直接启动。需要本机已安装 [Node.js](https://nodejs.org)。
+双击仓库里的 **`setup.bat`**：首次运行会自动通过 npm 安装 Electron（国内自动走 npmmirror 镜像加速），装完自动打开桌面窗口；之后每次双击直接启动。需要 Node.js 18+（没装或版本过旧脚本会给出提示）。
 
 也可以手动安装启动：
 
