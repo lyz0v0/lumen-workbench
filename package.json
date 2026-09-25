@@ -1,6 +1,6 @@
 {
   "name": "lumen-workbench-shell",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "private": true,
   "description": "Lumen 工作台 Electron 桌面壳：npm install 后 npm start 以桌面窗口运行（页面文件在仓库根）",
   "main": "shell/main.js",
