@@ -182,6 +182,18 @@ ipcMain.handle('lumen:app-info', () => ({
   userData: app.getPath('userData')
 }));
 
+/* 托盘菜单接管：设置面板提交 {action,label} 数组，白名单校验后重建托盘并持久化 */
+ipcMain.handle('lumen:tray-set', (_e, items) => {
+  const v = sanitizeTray(items);
+  if (!v) return { ok: false, error: '菜单数据不合法（须为 {action,label} 数组），已保留当前菜单' };
+  trayItems = v;
+  try { fs.writeFileSync(trayJson(), JSON.stringify(v, null, 1)); } catch (e) {}
+  refreshTray();
+  trace('托盘菜单已由页面接管 ' + v.length + ' 项');
+  return { ok: true, applied: v.length };
+});
+ipcMain.handle('lumen:tray-get', () => ({ ok: true, items: trayItems || loadTrayItems() }));
+
 ipcMain.handle('lumen:update-check', async () => {
   if (!updater) return { ok: false, error: '当前是轻量壳，去 GitHub 下载安装包' };
   try {
@@ -514,20 +526,69 @@ function trayHintOnce() {
     (httpPort ? '浏览器随时可打开 ' + baseUrl() + '\n' : '') + '需要彻底退出请右键托盘图标 → 退出');
 }
 
-function refreshTray() {
-  if (!tray) return;
-  const url = httpPort ? baseUrl() : '';
-  tray.setToolTip('Lumen 工作台' + (DEV ? '（dev）' : '') + (url ? ' · ' + url : ''));
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: '显示主窗口', click: showWin },
-    { label: '在浏览器中打开', enabled: !!httpPort, click: () => { if (httpPort) shell.openExternal(baseUrl()); } },
-    { label: '复制地址', enabled: !!httpPort, click: () => { if (httpPort) clipboard.writeText(baseUrl()); } },
-    { label: '壳状态 / 日志', click: openStatusWindow },
+/* ---------- 托盘菜单：默认项 + 页面接管 ----------
+ * 设置面板（仅壳内）可勾选前四项显隐；「重启端口服务」「退出」强制保留。
+ * 页面通过 lumenShell.setTrayMenu 提交 {action,label} 数组，壳按白名单校验——
+ * 动作的实现永远只在壳里，页面传什么都不可能执行任意代码；
+ * 自定义项持久化到 userData/tray-menu.json，重启即恢复，无需等页面加载。 */
+const TRAY_ALLOWED = new Set(['show', 'browser', 'copy', 'status']);
+const TRAY_DEFAULT = [
+  { action: 'show',    label: '显示主窗口' },
+  { action: 'browser', label: '在浏览器中打开' },
+  { action: 'copy',    label: '复制地址' },
+  { action: 'status',  label: '壳状态 / 日志' }
+];
+let trayItems = null;                        /* 懒加载：首次 refreshTray 时读盘 */
+const trayJson = () => path.join(app.getPath('userData'), 'tray-menu.json');
+
+function sanitizeTray(arr) {
+  if (!Array.isArray(arr)) return null;
+  const out = [];
+  for (const it of arr.slice(0, 8)) {
+    if (!it || typeof it !== 'object') continue;
+    const label = String(it.label || '').trim().slice(0, 20);
+    if (!label || !TRAY_ALLOWED.has(it.action)) continue;
+    out.push({ action: it.action, label });
+  }
+  /* 传了条目但全被滤掉 = 数据有问题，按拒收处理；空数组 = 用户全关，合法 */
+  if (arr.length && !out.length) return null;
+  return out;                                /* 允许全关：托盘只剩「重启端口服务/退出」 */
+}
+function loadTrayItems() {
+  try {
+    const v = sanitizeTray(JSON.parse(fs.readFileSync(trayJson(), 'utf8')));
+    if (v) return v;
+  } catch (e) {}
+  return TRAY_DEFAULT.slice();
+}
+
+function trayTemplate() {
+  const click = {
+    show: showWin,
+    browser: () => { if (httpPort) shell.openExternal(baseUrl()); },
+    copy: () => { if (httpPort) clipboard.writeText(baseUrl()); },
+    status: openStatusWindow
+  };
+  const items = trayItems.map(it => ({
+    label: it.label,
+    enabled: (it.action === 'browser' || it.action === 'copy') ? !!httpPort : true,
+    click: click[it.action]
+  }));
+  items.push(
     { type: 'separator' },
     { label: '重启端口服务', enabled: !FORCE_FILE, click: () => { restartServer(); } },
     { type: 'separator' },
     { label: '退出', click: quitApp }
-  ]));
+  );
+  return items;
+}
+
+function refreshTray() {
+  if (!tray) return;
+  if (!trayItems) trayItems = loadTrayItems();
+  const url = httpPort ? baseUrl() : '';
+  tray.setToolTip('Lumen 工作台' + (DEV ? '（dev）' : '') + (url ? ' · ' + url : ''));
+  tray.setContextMenu(Menu.buildFromTemplate(trayTemplate()));
 }
 
 function createTray() {
