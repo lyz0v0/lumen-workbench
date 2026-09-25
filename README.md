@@ -1,8 +1,8 @@
 # Lumen 工作台
 
-本地优先的个人 AI 工作台。整个应用就是三个文件（`index.html` + `app.js` + `style.css`），浏览器双击即用；也可以用内置的 Electron 桌面壳跑成桌面窗口。
+本地优先的个人 AI 工作台。整个应用就是三个文件（`index.html` + `app.js` + `style.css`），浏览器双击 `Lumen.html` 即用；也可以用内置的 Electron 桌面壳跑成桌面窗口，或直接装 Windows 安装包。
 
-> 当前版本 **v0.14.0** ｜ 55 个工具，已实装 29 个
+> 当前版本 **v0.14.1** ｜ 55 个工具，已实装 29 个
 
 ![主界面](docs/screenshot-main.jpg)
 
@@ -50,9 +50,13 @@
 
 **方式一：浏览器（最简单）**
 
-双击 `index.html` 即可，全部功能可用。
+双击 `Lumen.html` 即可，全部功能可用（`index.html` 是同一份文件的兼容名，作用相同）。
 
-**方式二：Electron 桌面窗口**
+**方式二：一键启动（Electron 桌面窗口）**
+
+双击仓库里的 **`setup.bat`**：首次运行会自动通过 npm 安装 Electron（国内自动走 npmmirror 镜像加速），装完自动打开桌面窗口；之后每次双击直接启动。需要本机已安装 [Node.js](https://nodejs.org)。
+
+也可以手动安装启动：
 
 ```bash
 npm install
@@ -60,18 +64,13 @@ npm start
 ```
 
 > 桌面窗口会多出一条「主进程代发请求」通道：热榜官方源、AI 对话（部分服务商不返回跨域头）在浏览器直开方式下会自动走备用源，壳里则直接可用。
->
-> 国内网络下载 Electron 二进制慢的话，先设置镜像：
->
-> ```bash
-> # Windows (PowerShell)
-> $env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
-> npm install
-> ```
 
-**方式三：Windows 安装包（测试中）**
+**方式三：Windows 安装包（推荐）**
 
-正在做 Windows 安装包（双击安装、开始菜单 / 桌面快捷方式、应用内自动更新），目前处于**内部测试阶段，还不稳定**，暂未正式提供下载。正式可用前请先用方式一 / 方式二。
+在 [Releases · Latest](https://github.com/lyz0v0/lumen-workbench/releases/latest) 下载 `lumen-workbench-setup.exe`，双击安装：分步向导、可自选安装位置、自动生成开始菜单快捷方式。
+
+- **应用内自动更新**：有新版本时，应用内「检查更新」即可下载并一键升级，数据全部保留
+- 关闭窗口缩到托盘常驻，右键托盘图标可退出或打开壳状态页
 
 ## 说明
 
