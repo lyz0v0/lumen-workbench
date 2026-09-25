@@ -75,7 +75,10 @@ contextBridge.exposeInMainWorld('lumenShell', {
   /* 下面三个给壳状态页（shell/status.html）用 */
   status: () => ipcRenderer.invoke('lumen:shell-status'),
   restartServer: () => ipcRenderer.invoke('lumen:restart-server'),
-  openLog: () => ipcRenderer.invoke('lumen:open-log')
+  openLog: () => ipcRenderer.invoke('lumen:open-log'),
+  /* 托盘菜单接管：设置面板用（见 settings.js）；动作实现只在壳里，页面只能提交动作名 */
+  setTrayMenu: (items) => ipcRenderer.invoke('lumen:tray-set', items),
+  getTrayMenu: () => ipcRenderer.invoke('lumen:tray-get')
 });
 
 /* 应用版本与应用内更新。
