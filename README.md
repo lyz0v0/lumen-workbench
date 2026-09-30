@@ -1,8 +1,12 @@
 # Lumen 工作台
 
+![release](https://img.shields.io/github/v/release/lyz0v0/lumen-workbench)![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?logo=node.js)![platform](https://img.shields.io/badge/platform-Windows%2010%2B-blue?logo=windows)![license](https://img.shields.io/badge/license-ARR--Custom-orange)
+
+[English](./README.en.md) | 中文
+
 本地优先的个人 AI 工作台。整个应用就是三个文件（`index.html` + `app.js` + `style.css`），浏览器双击 `Lumen.html` 即用；也可以用内置的 Electron 桌面壳跑成桌面窗口，或直接装 Windows 安装包。
 
-> 当前版本 **v0.14.1** ｜ 55 个工具，已实装 29 个
+> 当前版本 **v0.14.2** ｜ 55 个工具，已实装 29 个
 
 ![主界面](docs/screenshot-main.jpg)
 
@@ -12,6 +16,7 @@
 - **轻量无依赖**：三个文件即可运行，无框架、无后端、无注册
 - **无需注册**：没有账号体系；AI 能力走 BYOK（自带 API Key，请求由壳主进程代发，密钥不出本机）
 - **数据只存本机**：历史记录、AI 配置、价格备忘等全部保存在本地浏览器，卸载即清空
+- **多国语言**：界面支持简体中文 / English / 日本語，首次打开自动跟随系统语言，设置里可随时切换
 - **桌面壳可选**：`shell/` 是一个 Electron 轻量壳，做七件事——开窗口（走本地端口，与浏览器同源）、
   **本地端口服务**（启动即开 `http://127.0.0.1:17870`，浏览器打开就是同一个工作台；端口被占会先探明是哪个程序占的，再往后找空端口）、
   外链交给系统浏览器、代发联网请求（绕开跨域限制，热榜官方源 / AI 对话都走这条通道；浏览器侧由同源中继 `/__lumen/net`、`/__lumen/chat` 承接）、
