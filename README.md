@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v0.14.2** | 55 tools, 29 fully implemented
+> Current version **v0.15.0** | 55 tools, 34 fully implemented
 
 ![Main screen](docs/screenshot-main.jpg)
 
@@ -40,7 +40,7 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 
 ## Tools
 
-Currently **55 tools**, of which **29 are fully implemented**; the rest are placeholders being rolled out.
+Currently **55 tools**, of which **34 are fully implemented**; the rest are placeholders being rolled out.
 
 - **Images**: format conversion, compression, watermark, crop & resize, images to PDF
 - **PDF**: merge, split, page editing, watermark, paging seal, compress, to images, extract text
