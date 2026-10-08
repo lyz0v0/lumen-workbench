@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v0.15.0** | 55 tools, 34 fully implemented
+> Current version **v0.16.0** | 61 tools, 41 fully implemented
 
 ![Main screen](docs/screenshot-main.jpg)
 
