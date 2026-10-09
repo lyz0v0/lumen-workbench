@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v0.16.0** | 61 tools, 41 fully implemented
+> Current version **v0.16.5** | 81 tools, 41 fully implemented
 
 ![Main screen](docs/screenshot-main.jpg)
 
@@ -35,12 +35,12 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 - **Search suggestions**: typing matches tools instantly; ↑↓ to pick, Enter to open
 - **Frequent tools**: auto-sorted by recent use; right-click to pin favorites
 - **Startup self-check**: on launch, checks the local environment (storage / canvas / export / clipboard / WASM / network, 7 items) and external API health; issues light up in the sidebar with details, never blocking use
-- **Check for updates**: compares the latest version across multiple sources concurrently (raw / jsDelivr / GitHub API — any one reachable is enough); the dialog shows a "current ⟶ latest" comparison with update instructions and a one-click jump to download
+- **Check for updates**: compares the latest version across multiple sources concurrently (raw / jsDelivr / GitHub API / Gitee — any one reachable is enough); the dialog shows a "current ⟶ latest" comparison with update instructions and a one-click jump to download
 - **About**: one-line intro + stats dashboard (tools / implemented / categories) + quick start & shortcuts + sponsor link
 
 ## Tools
 
-Currently **55 tools**, of which **34 are fully implemented**; the rest are placeholders being rolled out.
+Currently **81 tools**, of which **41 are fully implemented**; the rest are placeholders being rolled out.
 
 - **Images**: format conversion, compression, watermark, crop & resize, images to PDF
 - **PDF**: merge, split, page editing, watermark, paging seal, compress, to images, extract text
