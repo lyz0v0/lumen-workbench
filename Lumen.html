@@ -33,9 +33,10 @@
         <svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>
         <span class="n">主界面</span>
       </button>
-      <button class="nav-item" data-go="all">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        <span class="n">全部工具</span>
+      <button class="nav-item" data-go="ai">
+        <svg viewBox="0 0 24 24"><path d="M20.5 11.8c0 3.9-3.8 7-8.5 7-1 0-1.95-.13-2.83-.4L4.5 19.9l1.2-3.4a6.5 6.5 0 0 1-2.2-4.7c0-3.9 3.8-7 8.5-7s8.5 3.1 8.5 7z"/><path d="M12 8.2l.85 2.15L15 11.2l-2.15.85L12 14.2l-.85-2.15L9 11.2l2.15-.85z"/></svg>
+        <span class="n">AI 对话</span>
+        <span class="ai-run-badge" id="aiRunBadge" hidden><i></i><em>运行中</em></span>
       </button>
 
       <div class="nav-label">工具分类</div>
@@ -53,6 +54,10 @@
       <button class="foot-btn" id="aboutBtn" title="关于与使用指南">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.6"/></svg>
         <span>关于</span>
+      </button>
+      <button class="foot-btn" id="settingsNavBtn" title="设置">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H10a1.6 1.6 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V10a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+        <span>设置</span>
       </button>
       <button class="foot-btn" id="themeBtn">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/></svg>
@@ -77,20 +82,284 @@
       <button class="icon-btn" id="ckBtn" title="全局搜索（Ctrl+K）">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
       </button>
-      <button class="icon-btn" title="设置" id="settingsBtn">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H10a1.6 1.6 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V10a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
-      </button>
       <div class="avatar" id="tbAvatar" title="点一下换张头像"><span id="tbAvatarTxt">L</span><img id="tbAvatarImg" alt="头像"></div>
     </header>
 
     <div class="scroll" id="scroll">
       <div class="page active" id="pageHome"></div>
+      <div class="page" id="pageAi"></div>
       <div class="page" id="pageAll"></div>
+      <!-- 设置页（10-14 晚：抽屉退役）。内容是静态 DOM、从不重绘 ——
+           所有 set-* / ai-* 表单绑定都在启动时挂一次，切页只切 active -->
+<div class="page" id="pageSettings">
+  <div class="settings-wrap">
+
+    <div class="set-sec">
+      <h3>外观与语言</h3>
+      <div class="set-row">
+        <span class="lb">界面语言</span>
+        <div class="seg" id="setLang" data-i18n-skip>
+          <button data-lg="zh-CN">简体中文</button>
+          <button data-lg="en">English</button>
+          <button data-lg="ja">日本語</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="lb">主题</span>
+        <div class="seg" id="setTheme">
+          <button data-tm="system">跟随系统</button>
+          <button data-tm="light">浅色</button>
+          <button data-tm="dark">深色</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="lb">强调色</span>
+        <div class="accent-row" id="setAccent">
+          <button class="accent-dot" data-ac="indigo" title="靛蓝" style="background:#4F46E5"></button>
+          <button class="accent-dot" data-ac="blue" title="海蓝" style="background:#2563EB"></button>
+          <button class="accent-dot" data-ac="green" title="松绿" style="background:#0E8A5F"></button>
+          <button class="accent-dot" data-ac="rose" title="玫红" style="background:#DB2777"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h3>背景壁纸</h3>
+      <div class="set-row">
+        <div>
+          <div class="lb">自定义壁纸</div>
+          <div class="sub">图片只读本地、不上传，存在本机浏览器里，重启保留</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="setWp"><span class="track"></span></label>
+      </div>
+      <div class="wp-pick" id="wpPick" role="button" tabindex="0" aria-label="选择壁纸图片">
+        <div class="wp-empty" id="wpEmpty">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-6 6-2-2-5 5"/></svg>
+          <div class="wp-empty-t">点击选图，或把图片拖进来</div>
+          <div class="wp-empty-s">建议 1920×1080 以上，单张不超过 20MB</div>
+        </div>
+        <div class="wp-set" id="wpSet" hidden>
+          <img class="wp-thumb" id="wpThumb" alt="当前壁纸预览">
+          <div class="wp-meta">
+            <div class="wp-name" id="wpName">—</div>
+            <div class="wp-sub" id="wpSub">—</div>
+          </div>
+          <button class="wp-act" id="wpSwap">更换</button>
+          <button class="wp-act wp-act-danger" id="wpDel">移除</button>
+        </div>
+      </div>
+      <input type="file" id="wpFile" accept="image/*" hidden>
+      <div class="set-row wp-row-range">
+        <span class="lb">蒙层强度</span>
+        <span class="wp-range-wrap"><input type="range" class="wp-range" id="wpDim" min="0" max="85" step="5" aria-label="蒙层强度"><b id="wpDimV">40%</b></span>
+      </div>
+      <div class="set-row wp-row-range">
+        <span class="lb">背景模糊</span>
+        <span class="wp-range-wrap"><input type="range" class="wp-range" id="wpBlur" min="0" max="24" step="2" aria-label="背景模糊"><b id="wpBlurV">0</b></span>
+      </div>
+      <div class="wp-note">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8.5v.01M11 12h1v4h1"/></svg>
+        蒙层颜色跟随主题自动翻转（浅色压白、深色压黑），切主题不用重设壁纸；强度调高可让浅色壁纸上的深色文字更清楚。
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h3>主页与侧卡</h3>
+      <div class="set-row">
+        <div>
+          <div class="lb">默认搜索引擎</div>
+          <div class="sub">主界面预选，随时可再切换</div>
+        </div>
+        <select id="setEngine" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:12.5px">
+          <option value="all">综合搜索</option>
+          <option value="bing">Bing</option>
+          <option value="google">Google</option>
+          <option value="baidu">百度</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="lb">农历黄历</div>
+          <div class="sub">显示在主界面左侧空白处，本地计算无需联网</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="setLunar"><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="lb">汇率</div>
+          <div class="sub">显示在农历卡下方，欧央行数据，免 Key 联网获取</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="setFx"><span class="track"></span></label>
+      </div>
+    </div>
+
+    <div class="set-sec" id="setAiSec">
+      <h3>AI 接口</h3>
+      <p class="set-desc">自带 Key（BYOK）· 任何 OpenAI 兼容接口 · 配置与对话只存本机。保存后回对话页，顶部下拉直接选模型。</p>
+      <div class="ai-cfg-grid">
+        <div class="panel">
+          <div class="panel-head"><h3>连接</h3><span class="ai-cfg-hint" id="aiConnHint"></span></div>
+          <div class="panel-body ai-cfg-body">
+            <div class="ai-f">
+              <span>服务商</span>
+              <div class="ai-prov" id="aiProv"></div>
+            </div>
+            <div class="ai-f">
+              <span>接口地址</span>
+              <input class="txt-input" id="aiBase" placeholder="https://api.deepseek.com/v1" value="">
+            </div>
+            <div class="ai-f">
+              <span>API Key</span>
+              <div class="ai-key">
+                <input class="txt-input" id="aiKey" type="password" placeholder="sk-…" value="" autocomplete="off" spellcheck="false">
+                <button id="aiEye" type="button">显示</button>
+              </div>
+            </div>
+            <div class="ai-f">
+              <span>模型</span>
+              <div class="ai-key">
+                <input class="txt-input" id="aiModel" list="aiModelList" placeholder="deepseek-chat" value="">
+                <button id="aiFetchM" type="button">拉取列表</button>
+              </div>
+              <div id="aiModelPickWrap"></div>
+              <datalist id="aiModelList"></datalist>
+            </div>
+            <div class="ai-cfg-actions">
+              <button class="btn btn-ghost" id="aiTest" style="padding:7px 16px;font-size:13px">测试连接</button>
+              <button class="btn btn-primary" id="aiSave" style="padding:7px 18px;font-size:13px">保存配置</button>
+            </div>
+            <div class="ai-test" id="aiTestOut"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>生成参数</h3><span style="font-size:11px;color:var(--text-3)">留空则用服务端默认</span></div>
+          <div class="panel-body ai-cfg-body">
+            <div class="ai-f">
+              <span>系统提示词</span>
+              <textarea class="txt-input" id="aiSys" rows="4" placeholder="例如：你是一名电商运营，回答尽量简洁、给可执行的步骤"></textarea>
+            </div>
+            <div class="ai-f ai-f-2">
+              <div>
+                <span>温度（0-2）</span>
+                <input class="txt-input" id="aiTemp" placeholder="默认" value="">
+              </div>
+              <div>
+                <span>最大回复 Token</span>
+                <input class="txt-input" id="aiMax" placeholder="默认" value="">
+              </div>
+            </div>
+            <div class="ai-f ai-f-2">
+              <div>
+                <span>携带上下文条数</span>
+                <input class="txt-input" id="aiCtx" value="12">
+              </div>
+              <div>
+                <span>流式输出</span>
+                <label class="switch" style="margin-top:8px"><input type="checkbox" id="aiStream" checked><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="hint" data-tone="info" style="margin-top:4px"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>上下文条数越多越连贯，也越费 Token；长对话建议 8-12 条。Key 仅存本机浏览器，不会随备份导出以外的方式离开设备。</span></div>
+          </div>
+        </div>
+
+        <div class="panel panel-web">
+          <div class="panel-head"><h3>联网搜索</h3><span class="ai-cfg-hint">先搜网页、把结果注入上下文，模型再回答 —— 对你接的任何模型都生效</span></div>
+          <div class="panel-body ai-cfg-body">
+            <div class="ai-f">
+              <span>搜索服务商</span>
+              <div class="ai-prov" id="aiWebProv"></div>
+            </div>
+            <div class="ai-f">
+              <span>搜索 API Key</span>
+              <div class="ai-key">
+                <input class="txt-input" id="aiWebKey" type="password" placeholder="搜索服务的 Key，与对话 Key 相互独立" value="" autocomplete="off" spellcheck="false">
+                <button id="aiWebEye" type="button">显示</button>
+              </div>
+            </div>
+            <div class="ai-f ai-f-2">
+              <div>
+                <span>结果条数（1-10）</span>
+                <input class="txt-input" id="aiWebNum" value="5">
+              </div>
+              <div>
+                <span>默认开关</span>
+                <label class="switch" style="margin-top:8px"><input type="checkbox" id="aiWebOn"><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="ai-cfg-actions">
+              <button class="btn btn-ghost" id="aiWebTest" style="padding:7px 16px;font-size:13px">测试搜索</button>
+            </div>
+            <div class="ai-test" id="aiWebTestOut"></div>
+            <div class="hint" data-tone="info" style="margin-top:4px"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>博查：open.bochaai.com 申请（国内直连，按次付费约 ¥0.03）；智谱：open.bigmodel.cn 申请（可复用 GLM 的 Key，约 ¥0.01/次）。两个接口都允许浏览器直连；Tavily 等海外搜索接口不允许跨域，故未收录。填好 Key 后回对话页点「联网」开关使用。</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-sec" id="setTraySec" hidden>
+      <h3>桌面托盘</h3>
+      <div class="set-row">
+        <div>
+          <div class="lb">托盘右键菜单</div>
+          <div class="sub">勾选项出现在系统托盘图标的右键菜单里；「重启端口服务」「退出」始终保留</div>
+        </div>
+      </div>
+      <div class="set-row">
+        <span class="lb">显示主窗口</span>
+        <label class="switch"><input type="checkbox" id="setTrayShow"><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <span class="lb">在浏览器中打开</span>
+        <label class="switch"><input type="checkbox" id="setTrayBrowser"><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <span class="lb">复制地址</span>
+        <label class="switch"><input type="checkbox" id="setTrayCopy"><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <span class="lb">壳状态 / 日志</span>
+        <label class="switch"><input type="checkbox" id="setTrayStatus"><span class="track"></span></label>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h3>数据与隐私</h3>
+      <div class="set-row">
+        <div>
+          <div class="lb">使用数据</div>
+          <div class="sub">最近使用与固定，仅存本机浏览器</div>
+        </div>
+        <button class="btn btn-ghost" id="setClearData" style="padding:5px 12px;font-size:12px;flex-shrink:0">清除</button>
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="lb">导出数据</div>
+          <div class="sub">设置 + 使用记录，下载为 JSON</div>
+        </div>
+        <button class="btn btn-ghost" id="setExport" style="padding:5px 12px;font-size:12px;flex-shrink:0">导出</button>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <h3>关于</h3>
+      <div class="set-about">
+        <b>Lumen 工作台</b> · v<span id="setVer"></span><br>
+        本地优先、无需登录：文件不上传，设置与使用记录只保存在本机浏览器。<br>
+        支持在线检查更新；使用指南与完整工具说明见侧栏「关于」。
+      </div>
+    </div>
+
+  </div>
+</div>
     </div>
   </main>
 </div>
 
-<div class="set-mask" id="setMask"></div>
+<!-- ============ 设置页（10-14 晚：抽屉退役，改成侧栏进入的独立页面） ============
+     分组卡片：外观与语言 / 背景壁纸 / 主页与侧卡 / AI 接口 / 桌面托盘 / 数据与隐私 / 关于
+     AI 接口表单从 AI 对话页整体搬来（ai-chat.js 的 aiCfgHTML→aiCfgPaint），
+     所有 ID 原样保留：settings.js / profit-calc.js / wallpaper.js / ai-chat.js 的启动绑定零改动 -->
 
 <!-- 意见反馈弹窗
      版式（09-23 重排）：引导句 → 「邮件」分节（邮箱卡 + 主按钮） → 「企业微信」分节（二维码卡） → 隐私说明条
@@ -228,178 +497,6 @@
   </div>
 </div>
 
-<aside class="set-drawer" id="setDrawer" aria-label="设置">
-  <div class="set-head">
-    <h2>设置</h2>
-    <button class="icon-btn" id="setClose" title="关闭">
-      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-  </div>
-  <div class="set-body">
-    <div class="set-sec">
-      <h3>语言</h3>
-      <div class="set-row">
-        <span class="lb">界面语言</span>
-        <div class="seg" id="setLang" data-i18n-skip>
-          <button data-lg="zh-CN">简体中文</button>
-          <button data-lg="en">English</button>
-          <button data-lg="ja">日本語</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <h3>外观</h3>
-      <div class="set-row">
-        <span class="lb">主题</span>
-        <div class="seg" id="setTheme">
-          <button data-tm="system">跟随系统</button>
-          <button data-tm="light">浅色</button>
-          <button data-tm="dark">深色</button>
-        </div>
-      </div>
-      <div class="set-row">
-        <span class="lb">强调色</span>
-        <div class="accent-row" id="setAccent">
-          <button class="accent-dot" data-ac="indigo" title="靛蓝" style="background:#4F46E5"></button>
-          <button class="accent-dot" data-ac="blue" title="海蓝" style="background:#2563EB"></button>
-          <button class="accent-dot" data-ac="green" title="松绿" style="background:#0E8A5F"></button>
-          <button class="accent-dot" data-ac="rose" title="玫红" style="background:#DB2777"></button>
-        </div>
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <h3>背景壁纸</h3>
-      <div class="set-row">
-        <div>
-          <div class="lb">自定义壁纸</div>
-          <div class="sub">图片只读本地、不上传，存在本机浏览器里，重启保留</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="setWp"><span class="track"></span></label>
-      </div>
-      <div class="wp-pick" id="wpPick" role="button" tabindex="0" aria-label="选择壁纸图片">
-        <div class="wp-empty" id="wpEmpty">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-6 6-2-2-5 5"/></svg>
-          <div class="wp-empty-t">点击选图，或把图片拖进来</div>
-          <div class="wp-empty-s">建议 1920×1080 以上，单张不超过 20MB</div>
-        </div>
-        <div class="wp-set" id="wpSet" hidden>
-          <img class="wp-thumb" id="wpThumb" alt="当前壁纸预览">
-          <div class="wp-meta">
-            <div class="wp-name" id="wpName">—</div>
-            <div class="wp-sub" id="wpSub">—</div>
-          </div>
-          <button class="wp-act" id="wpSwap">更换</button>
-          <button class="wp-act wp-act-danger" id="wpDel">移除</button>
-        </div>
-      </div>
-      <input type="file" id="wpFile" accept="image/*" hidden>
-      <div class="set-row wp-row-range">
-        <span class="lb">蒙层强度</span>
-        <span class="wp-range-wrap"><input type="range" class="wp-range" id="wpDim" min="0" max="85" step="5" aria-label="蒙层强度"><b id="wpDimV">40%</b></span>
-      </div>
-      <div class="set-row wp-row-range">
-        <span class="lb">背景模糊</span>
-        <span class="wp-range-wrap"><input type="range" class="wp-range" id="wpBlur" min="0" max="24" step="2" aria-label="背景模糊"><b id="wpBlurV">0</b></span>
-      </div>
-      <div class="wp-note">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8.5v.01M11 12h1v4h1"/></svg>
-        蒙层颜色跟随主题自动翻转（浅色压白、深色压黑），切主题不用重设壁纸；强度调高可让浅色壁纸上的深色文字更清楚。
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <h3>搜索</h3>
-      <div class="set-row">
-        <div>
-          <div class="lb">默认搜索引擎</div>
-          <div class="sub">主界面预选，随时可再切换</div>
-        </div>
-        <select id="setEngine" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:12.5px">
-          <option value="all">综合搜索</option>
-          <option value="bing">Bing</option>
-          <option value="google">Google</option>
-          <option value="baidu">百度</option>
-        </select>
-      </div>
-      <div class="set-row">
-        <div>
-          <div class="lb">每日快讯</div>
-          <div class="sub">每天60秒读懂世界，宽屏时显示在主界面右侧空白处，需联网</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="setHot"><span class="track"></span></label>
-      </div>
-      <div class="set-row">
-        <div>
-          <div class="lb">农历黄历</div>
-          <div class="sub">显示在主界面左侧空白处，本地计算无需联网</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="setLunar"><span class="track"></span></label>
-      </div>
-      <div class="set-row">
-        <div>
-          <div class="lb">汇率</div>
-          <div class="sub">显示在农历卡下方，欧央行数据，免 Key 联网获取</div>
-        </div>
-        <label class="switch"><input type="checkbox" id="setFx"><span class="track"></span></label>
-      </div>
-    </div>
-
-    <div class="set-sec" id="setTraySec" hidden>
-      <h3>桌面托盘</h3>
-      <div class="set-row">
-        <div>
-          <div class="lb">托盘右键菜单</div>
-          <div class="sub">勾选项出现在系统托盘图标的右键菜单里；「重启端口服务」「退出」始终保留</div>
-        </div>
-      </div>
-      <div class="set-row">
-        <span class="lb">显示主窗口</span>
-        <label class="switch"><input type="checkbox" id="setTrayShow"><span class="track"></span></label>
-      </div>
-      <div class="set-row">
-        <span class="lb">在浏览器中打开</span>
-        <label class="switch"><input type="checkbox" id="setTrayBrowser"><span class="track"></span></label>
-      </div>
-      <div class="set-row">
-        <span class="lb">复制地址</span>
-        <label class="switch"><input type="checkbox" id="setTrayCopy"><span class="track"></span></label>
-      </div>
-      <div class="set-row">
-        <span class="lb">壳状态 / 日志</span>
-        <label class="switch"><input type="checkbox" id="setTrayStatus"><span class="track"></span></label>
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <h3>数据</h3>
-      <div class="set-row">
-        <div>
-          <div class="lb">使用数据</div>
-          <div class="sub">最近使用与固定，仅存本机浏览器</div>
-        </div>
-        <button class="btn btn-ghost" id="setClearData" style="padding:5px 12px;font-size:12px;flex-shrink:0">清除</button>
-      </div>
-      <div class="set-row">
-        <div>
-          <div class="lb">导出数据</div>
-          <div class="sub">设置 + 使用记录，下载为 JSON</div>
-        </div>
-        <button class="btn btn-ghost" id="setExport" style="padding:5px 12px;font-size:12px;flex-shrink:0">导出</button>
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <h3>关于</h3>
-      <div class="set-about">
-        <b>Lumen 工作台</b> · v<span id="setVer"></span><br>
-        本地优先、无需登录：文件不上传，设置与使用记录只保存在本机浏览器。<br>
-        支持在线检查更新；使用指南与完整工具说明见侧栏「关于」。
-      </div>
-    </div>
-  </div>
-</aside>
 
 <!-- ============ Ctrl+K 命令面板（交互与视觉参考 shadcn/ui Command）
      骨架静态化：command.js 只更新列表内容与高亮，不重建面板 ============ -->
