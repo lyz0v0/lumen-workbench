@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v0.16.5** | 81 tools, 41 fully implemented
+> Current version **v0.16.10** | 77 tools, 42 fully implemented
 
 ![Main screen](docs/screenshot-main.jpg)
 
@@ -17,12 +17,13 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 - **No account required**: AI features use BYOK (bring your own API key; requests are relayed by the shell's main process, keys never leave your machine)
 - **Data stays local**: history, AI settings and price notes all live in your local browser storage; uninstall to wipe
 - **Multi-language**: the interface supports 简体中文 / English / 日本語 — auto-detected on first launch, switchable anytime in Settings
-- **Optional desktop shell**: `shell/` is a lightweight Electron shell that does seven things — opens a window (over a local port, same origin as the browser),
+- **Optional desktop shell**: `shell/` is a lightweight Electron shell that does nine things — opens a window (over a local port, same origin as the browser),
   **local port service** (starts `http://127.0.0.1:17870` on launch; opening that address in a browser shows the very same workbench; if the port is taken it identifies the occupier first, then falls back to the next free port),
   hands external links to the system browser, relays network requests (bypassing CORS — the official hot-list source and AI chat both go through this channel; on the browser side the same-origin relays `/__lumen/net` and `/__lumen/chat` handle it),
   screen recording (lists screen/window sources, captures system audio, saves straight to disk — see `shell/rec.js`),
   minimizes to tray on close (the port service keeps running; the tray menu offers show window / open in browser / copy address / shell status / restart port / quit — reopening the shell recalls the window and restarts the port service),
-  and a **shell status page** (`shell/status.html`: run mode, port, port-conflict diagnostics, recent logs; loaded from a local file, so it opens even if the port service is down).
+  local capabilities a web page cannot have (**clipboard history** — text, images and copied file paths are captured in the background even when the window is unfocused; and **system info** — CPU model, physical core count, real memory, graphics card and per-display parameters),
+  a **shell status page** (`shell/status.html`: run mode, port, port-conflict diagnostics, recent logs; loaded from a local file, so it opens even if the port service is down), and a **Python runtime** (detects the local Python interpreter, feeds it the bundled scripts from `src/py/` and hands the rendered images back — pixel avatars and other heavy lifting run on it; absent in the browser-only version).
   To force the legacy `file://` mode set the env var `LUMEN_MODE=file`; the port can be changed with `LUMEN_PORT`. For development use `npm run dev`, which runs on port 17871 with an isolated data directory.
 - **Automatic fallback for free APIs**: weather / exchange rates / hot lists / parcel tracking all have backup sources or multi-level fallbacks — one failing never breaks the rest
 
@@ -40,12 +41,12 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 
 ## Tools
 
-Currently **81 tools**, of which **41 are fully implemented**; the rest are placeholders being rolled out.
+Currently **77 tools**, of which **42 are fully implemented**; the rest are placeholders being rolled out.
 
 - **Images**: format conversion, compression, watermark, crop & resize, images to PDF
 - **PDF**: merge, split, page editing, watermark, paging seal, compress, to images, extract text
 - **E-commerce**: banned-word detection, parcel tracking, profit & pricing calculator, price notes
-- **AI**: AI chat (BYOK, multi-model / streaming / local sessions)
+- **AI workbench** (sidebar entry): chat with local tool calling, an assistant mode that runs multi-step tasks in the open, a prompt optimizer (two-mode rewrite / iterate / score / side-by-side compare, with {{variable}} guarding), image attachments, session management and a prompt library (BYOK, multi-model / streaming / local sessions)
 - **Accio Work**: skill-pack tutorial center (9 packs) & user guide
 - **Others**: web image extractor, QR code generator / scanner, video prompt helper, and more
 
