@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v0.16.15** | 77 tools, 42 fully implemented
+> Current version **v0.16.20** | 77 tools, 42 fully implemented
 
 ![Main screen](docs/screenshot-main.jpg)
 
@@ -46,7 +46,7 @@ Currently **77 tools**, of which **42 are fully implemented**; the rest are plac
 - **Images**: format conversion, compression, watermark, crop & resize, images to PDF
 - **PDF**: merge, split, page editing, watermark, paging seal, compress, to images, extract text
 - **E-commerce**: banned-word detection, parcel tracking, profit & pricing calculator, price notes
-- **AI workbench** (sidebar entry): chat with local tool calling, an assistant mode that runs multi-step tasks in the open, a prompt optimizer (two-mode rewrite / iterate / score / side-by-side compare, with {{variable}} guarding), image attachments, session management and a prompt library (BYOK, multi-model / streaming / local sessions)
+- **AI workbench** (sidebar entry, "AI Assistant"): the assistant calls local tools right in the chat, and "use tools" mode auto-continues past the step limit to finish multi-step tasks in one run; also a prompt optimizer (two-mode rewrite / iterate / score / side-by-side compare, with {{variable}} guarding), image attachments, session management, a prompt library and custom skills (BYOK, multi-model / streaming / local sessions)
 - **Accio Work**: skill-pack tutorial center (9 packs) & user guide
 - **Others**: web image extractor, QR code generator / scanner, video prompt helper, and more
 
