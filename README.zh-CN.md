@@ -6,7 +6,7 @@
 
 本地优先的个人 AI 工作台。整个应用就是三个文件（`index.html` + `app.js` + `style.css`），浏览器双击 `Lumen.html` 即用；也可以用内置的 Electron 桌面壳跑成桌面窗口，或直接装 Windows 安装包。
 
-> 当前版本 **v0.16.20** ｜ 77 个工具，已实装 42 个
+> 当前版本 **v0.17.0** ｜ 77 个工具，已实装 42 个
 
 ![主界面](docs/screenshot-main.jpg)
 
