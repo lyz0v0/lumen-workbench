@@ -13,7 +13,11 @@
  *   4) 联网请求代发（绕 CORS）；5) AI 请求代发（POST + SSE 流式）；
  *   6) 屏幕录制（列源 / 系统声音 / 流式落盘，见 rec.js）；
  *   7) 壳状态页（status.html）—— 端口 / 占用诊断 / 日志，出问题时用户自己就能看；
- *   8) 应用内自动更新（仅当带 electron-updater 且是打包态）。
+ *   8) 应用内自动更新（仅当带 electron-updater 且是打包态）；
+ *   9) 本机能力（剪贴板历史采集 / 系统硬件信息，见「五-b」）——
+ *      这两项页面拿不到，只能主进程做，网页版直开时页面侧降级；
+ *  10) Python 运行时（见「五-c」）—— 把参数交给本机 python 跑自带脚本、收回图片，
+ *      给创意工具当算力后端；网页版直开同样降级。
  * 关窗口缩到托盘常驻，端口继续服务；托盘里退出才算真退出。
  *
  * 环境变量：LUMEN_PORT 指定端口；LUMEN_MODE=file 强制回到 file:// 模式（回退开关）；
@@ -136,6 +140,41 @@ function readVersion() {
    仓库轻量壳没装这个依赖，require 直接抛 → 自动退化成「无自动更新」。
    页面侧读 lumenApp.isInstalled 决定显示哪种更新入口（应用内 / 去 GitHub 下载）。 */
 let updater = null;
+/* 更新源与回退（1017 加入）：
+ *   GitHub（electron-builder 生成的 app-update.yml）为默认；
+ *   GitHub 不通时拉 Gitee 镜像的 VERSION，比当前新就用 generic provider
+ *   直指 Gitee Release 目录（附件 URL 与 GitHub 同构，latest.yml 在里面）。
+ *   回退只在内存里，重启后重新从 GitHub 试起。 */
+const UPD_GH_FEED = process.env.LUMEN_UPDATE_URL
+  ? { provider: 'generic', url: process.env.LUMEN_UPDATE_URL }
+  : { provider: 'github', owner: 'lyz0v0', repo: 'lumen-workbench' };
+const UPD_GITEE_REPO = 'https://gitee.com/lyz0v0/lumen-workbench';
+let updSource = 'github';        /* github | gitee */
+let updQuiet = false;            /* 非末位源尝试中：压掉 error 推送，别让页面闪一下失败 */
+
+function updTuple(v) {
+  return String(v || '').replace(/^v/i, '').split(/[.\-+]/).map(n => parseInt(n, 10) || 0);
+}
+function updCmp(a, b) {          /* a>b 返回正数 */
+  const A = updTuple(a), B = updTuple(b);
+  for (let i = 0; i < 3; i++) { const d = (A[i] || 0) - (B[i] || 0); if (d) return d; }
+  return 0;
+}
+async function updGiteeVersion() {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 6000);
+  try {
+    const r = await httpFetch(UPD_GITEE_REPO + '/raw/master/VERSION?t=' + Date.now(),
+      { signal: ctl.signal, cache: 'no-store' });
+    if (!r.ok) return '';
+    const v = String(await r.text()).trim().replace(/^v/i, '');
+    return /^\d+(\.\d+){1,3}$/.test(v) ? v : '';
+  } catch (e) {
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function initUpdater() {
   if (!app.isPackaged && String(process.env.LUMEN_FORCE_UPDATE || '') !== '1') {
@@ -145,7 +184,7 @@ function initUpdater() {
   try {
     const { autoUpdater } = require('electron-updater');
     if (process.env.LUMEN_UPDATE_URL) {
-      autoUpdater.setFeedURL({ provider: 'generic', url: process.env.LUMEN_UPDATE_URL });
+      autoUpdater.setFeedURL(UPD_GH_FEED);
       trace('更新源覆盖为 ' + process.env.LUMEN_UPDATE_URL);
     }
     autoUpdater.autoDownload = false;          /* 由页面决定何时下载 */
@@ -160,12 +199,16 @@ function initUpdater() {
       trace('update-status ' + state + ' ' + JSON.stringify(extra || {}));
     };
 
-    autoUpdater.on('checking-for-update', () => push('checking'));
-    autoUpdater.on('update-available', i => push('available', { version: (i && i.version) || '' }));
-    autoUpdater.on('update-not-available', i => push('none', { version: (i && i.version) || '' }));
+    autoUpdater.on('checking-for-update', () => { if (!updQuiet) push('checking', { source: updSource }); });
+    autoUpdater.on('update-available', i => push('available', { version: (i && i.version) || '', source: updSource }));
+    autoUpdater.on('update-not-available', i => push('none', { version: (i && i.version) || '', source: updSource }));
     autoUpdater.on('download-progress', p => push('downloading', { percent: Math.round((p && p.percent) || 0) }));
     autoUpdater.on('update-downloaded', i => push('downloaded', { version: (i && i.version) || '' }));
-    autoUpdater.on('error', e => push('error', { message: String((e && e.message) || e) }));
+    autoUpdater.on('error', e => {
+      const msg = String((e && e.message) || e);
+      if (updQuiet) { trace('（' + updSource + ' 源失败，准备换源）' + msg); return; }
+      push('error', { message: msg, source: updSource });
+    });
 
     updater = autoUpdater;
     trace('自动更新已就绪 v' + app.getVersion());
@@ -173,6 +216,44 @@ function initUpdater() {
     updater = null;
     trace('未启用自动更新（' + ((e && e.message) || e) + '）');
   }
+}
+
+/* 依次尝试可用源：默认 GitHub → Gitee；上次已切到 Gitee 就先走 Gitee。
+ * 返回 { info, source }；Gitee 明确「不比当前新」时直接算无更新，不必再去啃 GitHub。 */
+async function updCheckAny() {
+  const order = updSource === 'gitee' ? ['gitee', 'github'] : ['github', 'gitee'];
+  let lastErr = null;
+  for (let i = 0; i < order.length; i++) {
+    const src = order[i];
+    const last = i === order.length - 1;
+    updQuiet = !last;
+    try {
+      if (src === 'github') {
+        updater.setFeedURL(UPD_GH_FEED);
+      } else {
+        const gv = await updGiteeVersion();
+        if (!gv) throw new Error('Gitee 版本号读取失败');
+        if (updCmp(gv, app.getVersion()) <= 0) {
+          updSource = 'gitee';
+          updQuiet = false;
+          trace('Gitee 源：' + gv + '，不比当前新');
+          return { info: { version: gv }, source: 'gitee' };
+        }
+        updater.setFeedURL({ provider: 'generic', url: UPD_GITEE_REPO + '/releases/download/v' + gv + '/' });
+        trace('切到 Gitee 更新源 v' + gv);
+      }
+      const r = await updater.checkForUpdates();
+      updSource = src;
+      updQuiet = false;
+      trace('更新源 ' + src + ' 检查完成：' + ((r && r.updateInfo && r.updateInfo.version) || 'none'));
+      return { info: (r && r.updateInfo) || {}, source: src };
+    } catch (e) {
+      lastErr = e;
+      updQuiet = false;
+      trace('更新源 ' + src + ' 失败：' + ((e && e.message) || e));
+    }
+  }
+  throw lastErr || new Error('检查更新失败');
 }
 
 ipcMain.handle('lumen:app-info', () => ({
@@ -197,8 +278,8 @@ ipcMain.handle('lumen:tray-get', () => ({ ok: true, items: trayItems || loadTray
 ipcMain.handle('lumen:update-check', async () => {
   if (!updater) return { ok: false, error: '当前是轻量壳，去 GitHub 下载安装包' };
   try {
-    const r = await updater.checkForUpdates();
-    return { ok: true, version: (r && r.updateInfo && r.updateInfo.version) || '' };
+    const r = await updCheckAny();
+    return { ok: true, version: (r.info && r.info.version) || '', source: r.source };
   } catch (e) {
     return { ok: false, error: String((e && e.message) || e) };
   }
@@ -621,8 +702,10 @@ Menu.setApplicationMenu(null);
 ipcMain.handle('lumen:net-fetch', async (_e, url) => {
   const u = String(url || '');
   if (!/^https?:\/\//i.test(u)) return { ok: false, status: 0, error: '只允许 http/https 请求' };
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 12000);   /* 挂死的服务端别拖住整轮刷新 */
   try {
-    const r = await httpFetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (Lumen Workbench)' } });
+    const r = await httpFetch(u, { headers: { 'User-Agent': 'Mozilla/5.0 (Lumen Workbench)' }, signal: ctl.signal });
     const text = await r.text();
     const headers = {};
     for (const k of ['ratelimit', 'retry-after', 'x-ratelimit-remaining']) {
@@ -633,7 +716,9 @@ ipcMain.handle('lumen:net-fetch', async (_e, url) => {
     return { ok: r.ok, status: r.status, text, headers };
   } catch (e) {
     trace('net-fetch ERR ' + u.slice(0, 90) + ' ' + ((e && e.message) || e));
-    return { ok: false, status: 0, error: String((e && e.message) || e) };
+    return { ok: false, status: 0, error: String((e && e.message) || e), timeout: ctl.signal.aborted };
+  } finally {
+    clearTimeout(timer);
   }
 });
 
@@ -698,11 +783,519 @@ ipcMain.on('lumen:chat-abort', (_e, id) => {
   if (c) c.abort();
 });
 
-/* 本地工具用不上 GPU 加速：禁 GPU 并把渲染并入主进程，避免 GPU 子进程在无显卡环境下崩溃。
+/* ============================================================
+   五-b、本机能力：剪贴板历史 + 系统信息
+   ------------------------------------------------------------
+   这两件事**只能**在主进程做（所以网页版直开时页面侧要降级）：
+     · 剪贴板 —— 窗口没焦点时也要继续记（你在别的程序里复制），
+       Electron 的 clipboard 模块在主进程里随时可读；页面的
+       navigator.clipboard 需要焦点 + 授权，读图更是不可能。
+     · 系统信息 —— 物理核数、显卡型号、完整内存量、多屏参数，
+       navigator 只肯吐极小一部分（且各浏览器口径不一）。
+   渲染层看到的是 lumenClip / lumenSys 两个桥，别的什么都不碰。 */
+const CLIP_FILE = (() => {
+  try { return path.join(app.getPath('userData'), 'lumen-clip.json'); }
+  catch (e) { return path.join(os.tmpdir(), 'lumen-clip.json'); }
+})();
+const CLIP_MAX = 100;                     /* 条目总数上限，超出丢最旧 */
+const CLIP_IMG_MAX = 20;                  /* 图片条目另设上限（base64 太占地方） */
+const CLIP_FILE_MAX = 8 * 1024 * 1024;    /* 落盘上限，超了从最旧的图片开始砍 */
+const CLIP_TEXT_MAX = 20000;              /* 单条文本上限（整篇文档别塞满存储） */
+const CLIP_IMG_FULL_MAX = 2 * 1024 * 1024;/* 原图超过这个只留缩略图（回填时告知） */
+const CLIP_TICK = 900;                    /* 轮询间隔 */
+
+let clipItems = [];
+let clipWatch = true;
+let clipTimer = null;
+let clipSig = '';          /* 上一次读到的指纹，用来去重 */
+let clipKind = '';         /* 上一次读到的类型：files / text / image */
+let clipPrimed = false;    /* 首次轮询只认指纹不入库（别把启动前的旧剪贴板也记进来） */
+let clipQuiet = 0;         /* 「回填到剪贴板」之后的静默窗口，别把自己写进去的又记一遍 */
+let clipSeq = 0;
+
+function clipLoad() {
+  try {
+    const d = JSON.parse(fs.readFileSync(CLIP_FILE, 'utf8'));
+    if (Array.isArray(d.items)) clipItems = d.items.slice(0, CLIP_MAX);
+    if (typeof d.watch === 'boolean') clipWatch = d.watch;
+    for (const it of clipItems) {
+      const n = Number(String(it.id || '').replace(/^c/, '').split('-')[0]);
+      if (n > clipSeq) clipSeq = n;
+    }
+  } catch (e) {}
+}
+function clipSave() {
+  try {
+    let json = JSON.stringify({ watch: clipWatch, items: clipItems });
+    /* 体积兜底：从最旧的图片条目开始砍，直到落盘大小达标 */
+    while (json.length > CLIP_FILE_MAX && clipItems.some(x => x.type === 'image')) {
+      for (let k = clipItems.length - 1; k >= 0; k--) {
+        if (clipItems[k].type === 'image') { clipItems.splice(k, 1); break; }
+      }
+      json = JSON.stringify({ watch: clipWatch, items: clipItems });
+    }
+    fs.writeFileSync(CLIP_FILE, json);
+  } catch (e) {}
+}
+/* 分两类上限修剪：非图片按总数、图片单独计数（filter 重建，别用 splice 按下标删，
+   下标会在删除过程中错位，把相邻的文本条目一起带走） */
+function clipTrim() {
+  let imgs = 0;
+  clipItems = clipItems.filter(x => {
+    if (x.type !== 'image') return true;
+    imgs++;
+    return imgs <= CLIP_IMG_MAX;
+  });
+  if (clipItems.length > CLIP_MAX) clipItems.length = CLIP_MAX;
+}
+/* 列表用的轻量视图：图片只带缩略图，原图留在主进程里（IPC 别扛着几 MB 的 base64 来回跑） */
+function clipEntry(x) {
+  const o = { id: x.id, type: x.type, ts: x.ts };
+  if (x.type === 'text') o.text = x.text;
+  if (x.type === 'files') o.files = x.files;
+  if (x.type === 'image') { o.thumb = x.thumb; o.w = x.w; o.h = x.h; o.big = !!x.big; }
+  return o;
+}
+function clipAdd(entry) {
+  entry.id = 'c' + (++clipSeq) + '-' + Date.now().toString(36);
+  entry.ts = Date.now();
+  clipItems.unshift(entry);
+  clipTrim();
+  clipSave();
+  if (win && !win.isDestroyed()) {
+    try { win.webContents.send('lumen:clip-new', clipEntry(entry)); } catch (e) {}
+  }
+  return entry;
+}
+/* 复制进来的文件（Windows 的 CF_HDROP）。Electron 没有专门的读接口，
+   FileNameW 是块 UTF-16LE、以 \0 分隔的缓冲区，自己拆。 */
+function clipReadFiles() {
+  if (process.platform !== 'win32') return [];
+  try {
+    const buf = clipboard.readBuffer('FileNameW');
+    if (!buf || !buf.length) return [];
+    return buf.toString('utf16le').split('\u0000').map(s => s.trim()).filter(Boolean);
+  } catch (e) { return []; }
+}
+function clipThumb(img) {
+  try {
+    const s = img.getSize();
+    const out = s.width > 320 ? img.resize({ width: 320, quality: 'good' }) : img;
+    return 'data:image/png;base64,' + out.toPNG().toString('base64');
+  } catch (e) { return ''; }
+}
+/* 读一次剪贴板。图片这一支要跑 toPNG（整屏截图上百毫秒），所以只在
+   「类型刚刚变成图片」的边沿或显式刷新时才做，别每 900ms 烧一次 CPU。 */
+function clipPoll(force) {
+  if (!clipWatch && !force) return;
+  /* 首次轮询只认指纹不入库：启动前就躺在剪贴板里的东西别冒充「刚复制的」。
+     显式刷新（force）例外 —— 那是用户自己在页面上点的「立即读取」。 */
+  const dry = !clipPrimed && !force;
+  clipPrimed = true;
+  const quiet = dry || Date.now() < clipQuiet;
+
+  const files = clipReadFiles();
+  if (files.length) {
+    const sig = 'F:' + files.join('|');
+    const edge = clipKind !== 'files';
+    clipKind = 'files';
+    if (quiet || sig === clipSig) { clipSig = sig; return; }
+    clipSig = sig;
+    if (edge) clipAdd({ type: 'files', files: files.slice(0, 50) });
+    return;
+  }
+
+  const txt = String(clipboard.readText() || '');
+  if (txt) {
+    const sig = 'T:' + txt.length + ':' + txt.slice(0, 200);
+    clipKind = 'text';
+    if (quiet || sig === clipSig) { clipSig = sig; return; }
+    clipSig = sig;
+    clipAdd({ type: 'text', text: txt.slice(0, CLIP_TEXT_MAX) });
+    return;
+  }
+
+  let img = null;
+  try { img = clipboard.readImage(); } catch (e) { img = null; }
+  if (!img || (typeof img.isEmpty === 'function' && img.isEmpty())) { clipKind = ''; return; }
+  const sz = img.getSize();
+  const edge = clipKind !== 'image';
+  clipKind = 'image';
+  const guard = 'I:' + sz.width + 'x' + sz.height;
+  if (quiet || (!edge && guard === clipSig)) { clipSig = guard; return; }
+  clipSig = guard;
+
+  let png;
+  try { png = img.toPNG(); } catch (e) { return; }
+  const top = clipItems[0];
+  /* 同一张图重复复制（尺寸 + 字节数都一样）就不再入库 */
+  if (top && top.type === 'image' && top.w === sz.width && top.h === sz.height && top.bytes === png.length) return;
+  const big = png.length > CLIP_IMG_FULL_MAX;
+  clipAdd({
+    type: 'image', w: sz.width, h: sz.height, bytes: png.length, big,
+    thumb: clipThumb(img) || ('data:image/png;base64,' + png.toString('base64')),
+    data: big ? '' : 'data:image/png;base64,' + png.toString('base64')
+  });
+}
+function clipStart() {
+  if (clipTimer) return;
+  clipLoad();
+  clipTimer = setInterval(() => clipPoll(false), CLIP_TICK);
+  if (clipTimer.unref) clipTimer.unref();
+}
+function clipStop() {
+  if (clipTimer) clearInterval(clipTimer);
+  clipTimer = null;
+}
+
+ipcMain.handle('lumen:clip-list', () => ({ ok: true, watch: clipWatch, items: clipItems.map(clipEntry) }));
+ipcMain.handle('lumen:clip-copy', (_e, id) => {
+  const it = clipItems.find(x => x.id === String(id || ''));
+  if (!it) return { ok: false, error: '条目不存在' };
+  /* 写回之后别把自己的写入又记一条 */
+  clipQuiet = Date.now() + 1600;
+  try {
+    if (it.type === 'text') {
+      clipboard.writeText(it.text);
+      clipKind = 'text'; clipSig = 'T:' + it.text.length + ':' + it.text.slice(0, 200);
+      return { ok: true, note: '' };
+    }
+    if (it.type === 'files') {
+      const text = it.files.join('\r\n');
+      clipboard.writeText(text);
+      clipKind = 'text'; clipSig = 'T:' + text.length + ':' + text.slice(0, 200);
+      return { ok: true, note: '文件复制受限，已按路径文本写入剪贴板' };
+    }
+    const src = it.data || it.thumb;
+    clipboard.writeImage(nativeImage.createFromDataURL(src));
+    clipKind = 'image'; clipSig = 'I:' + it.w + 'x' + it.h;
+    return { ok: true, note: it.big && !it.data ? '原图过大，回填的是缩略图' : '' };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e) };
+  }
+});
+ipcMain.handle('lumen:clip-del', (_e, id) => {
+  const k = clipItems.findIndex(x => x.id === String(id || ''));
+  if (k >= 0) { clipItems.splice(k, 1); clipSave(); }
+  return { ok: true, count: clipItems.length };
+});
+ipcMain.handle('lumen:clip-clear', () => {
+  clipItems = []; clipSave();
+  return { ok: true, count: 0 };
+});
+ipcMain.handle('lumen:clip-watch', (_e, on) => {
+  clipWatch = !!on;
+  /* 重新打开监听时先认一次指纹：暂停期间复制的东西不补记，但从现在起接着记 */
+  if (clipWatch) clipPrimed = false;
+  clipSave();
+  return { ok: true, watch: clipWatch };
+});
+ipcMain.handle('lumen:clip-poll', () => { clipPoll(true); return { ok: true, items: clipItems.map(clipEntry) }; });
+
+/* ---------- 系统信息 ---------- */
+let sysGpuCache = null;
+
+/* 显卡型号：Electron 的 app.getGPUInfo('complete') 最省事，但本机为了稳
+   （无显卡 VM）把硬件加速关掉了，它汇报的常是 SwiftShader / llvmpipe 这种
+   软件渲染器 —— 拿那个当「你的显卡」是误导。所以识别出来之后改问操作系统。 */
+const SYS_GPU_TIMEOUT = 2500;
+const SYS_GPU_SOFT = /swiftshader|llvmpipe|basic render|software renderer|angle \(google/i;
+
+/* 走异步的 execFile：同步版会把主进程整个卡住（UI 跟着冻住），PowerShell 慢的时候很难看 */
+function sysRun(cmd, args, ms) {
+  return new Promise(resolve => {
+    try {
+      const { execFile } = require('child_process');
+      execFile(cmd, args, { timeout: ms || 8000, windowsHide: true, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 },
+        (err, stdout) => resolve(err ? '' : String(stdout || '')));
+    } catch (e) { resolve(''); }
+  });
+}
+async function sysGpuByOS() {
+  try {
+    if (process.platform === 'win32') {
+      /* wmic 在新版 Windows 已移除，走 PowerShell 的 CIM 接口 */
+      const out = await sysRun('powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-Command', 'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name'], 9000);
+      return out.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    }
+    if (process.platform === 'darwin') {
+      const out = await sysRun('/usr/sbin/system_profiler', ['SPDisplaysDataType'], 9000);
+      return out.split(/\r?\n/).filter(l => /Chipset Model/.test(l)).map(l => l.split(':').slice(-1)[0].trim());
+    }
+    const out = await sysRun('lspci', [], 9000);
+    return out.split(/\r?\n/).filter(l => /VGA|3D|Display/i.test(l)).map(l => l.slice(l.indexOf(':') + 1).trim());
+  } catch (e) { return []; }
+}
+async function sysGpu() {
+  if (sysGpuCache) return sysGpuCache;
+  let raw = [];
+  try {
+    const info = await Promise.race([
+      app.getGPUInfo('complete'),
+      new Promise((_res, rej) => setTimeout(() => rej(new Error('timeout')), SYS_GPU_TIMEOUT))
+    ]);
+    raw = ((info && info.gpuDevice) || []).map(d => (d && (d.deviceString || d.driverVendor)) || '').filter(Boolean);
+  } catch (e) {}
+
+  let list = raw.filter(s => !SYS_GPU_SOFT.test(s));
+  let from = 'electron';
+  if (!list.length) {
+    const os = await sysGpuByOS();
+    if (os.length) { list = os; from = 'os'; }
+    else if (raw.length) { list = raw; from = 'electron'; }   /* 兜底：有总比空着强 */
+    else from = '';
+  }
+  sysGpuCache = { list, from };
+  return sysGpuCache;
+}
+/* Windows 的 os.release() 给的是内核版本（10.0.22631），拿它判 10 / 11 */
+function sysOsName(release) {
+  if (process.platform === 'win32') {
+    const b = Number(String(release).split('.')[2] || 0);
+    return b >= 22000 ? 'Windows 11' : 'Windows 10';
+  }
+  if (process.platform === 'darwin') return 'macOS';
+  return 'Linux';
+}
+async function sysInfo() {
+  const cpus = os.cpus() || [];
+  const out = {
+    ok: true,
+    shell: 'desktop',
+    result: {
+      platform: process.platform,
+      osName: sysOsName(os.release()),
+      osRelease: os.release(),
+      osVersion: (() => { try { return os.version ? String(os.version()) : ''; } catch (e) { return ''; } })(),
+      arch: process.arch,
+      host: (() => { try { return os.hostname(); } catch (e) { return ''; } })(),
+      uptime: os.uptime(),
+      locale: (() => { try { return app.getLocale(); } catch (e) { return ''; } })(),
+      cpuModel: cpus[0] ? String(cpus[0].model).replace(/\s+/g, ' ').trim() : '',
+      cpuCount: cpus.length,
+      cpuSpeed: cpus[0] ? cpus[0].speed : 0,
+      memTotal: os.totalmem(),
+      memFree: os.freemem(),
+      home: (() => { try { return os.homedir(); } catch (e) { return ''; } })(),
+      tmp: (() => { try { return os.tmpdir(); } catch (e) { return ''; } })(),
+      userData: (() => { try { return app.getPath('userData'); } catch (e) { return ''; } })(),
+      logFile: LOG_FILE,
+      appVersion: readVersion(),
+      versions: {
+        electron: process.versions.electron || '',
+        chrome: process.versions.chrome || '',
+        node: process.versions.node || '',
+        v8: process.versions.v8 || ''
+      },
+      screens: [],
+      gpu: [],
+      gpuFrom: ''
+    }
+  };
+  /* screen 模块只能在 ready 之后 require，所以在函数里取 */
+  try {
+    const { screen } = require('electron');
+    const primary = screen.getPrimaryDisplay().id;
+    for (const d of screen.getAllDisplays()) {
+      out.result.screens.push({
+        w: d.size.width, h: d.size.height, scale: d.scaleFactor,
+        depth: d.colorDepth, hz: d.displayFrequency || 0, primary: d.id === primary
+      });
+    }
+  } catch (e) {}
+  try {
+    const g = await sysGpu();
+    out.result.gpu = g.list;
+    out.result.gpuFrom = g.from;
+  } catch (e) {}
+  return out;
+}
+ipcMain.handle('lumen:sys-info', () => sysInfo());
+
+/* ============================================================
+   五-c、Python 运行时（创意工具的算力后端）
+   ============================================================ */
+/* 创意工具里有些活（画像素 / 算图形 / 合成音频）交给本机 Python 干最合适。
+ * 通道设计：
+ *   页面发 { source, args, timeout } → 壳把 source 落到临时目录 → 起本机 python 跑
+ *   → 脚本把产物写进同一目录、往 stdout 打一行 JSON 摘要 → 壳收回文件转 data URL 给页面。
+ * source 只认构建时内联进 app.js 的 src/py/*.py（py-bridge.js 解 __LUMEN_PY_URI__ 后原样转发），
+ * 而且第一行必须是 PY_MARKER —— 主进程这里只当它是「本工具自带的脚本」，
+ * 网页版直开没有进程可借：window.lumenPy 不存在，工具页自己降级。 */
+const PY_MARKER = '# lumen-py-script';       // 自带脚本的身份证（源码第一行必须是它）
+const PY_SRC_MAX = 512 * 1024;               // 单个脚本源码上限
+const PY_FILE_MAX = 24 * 1024 * 1024;        // 单个产物读回上限
+const PY_OUT_MAX = 96 * 1024 * 1024;         // stdout / stderr 上限
+let pyProbeCache = null;
+
+function pyConfigFile() {
+  try { return path.join(app.getPath('userData'), 'lumen-py.json'); }
+  catch (e) { return path.join(os.tmpdir(), 'lumen-py.json'); }
+}
+function pyReadConfig() {
+  try { return JSON.parse(fs.readFileSync(pyConfigFile(), 'utf8')) || {}; } catch (e) { return {}; }
+}
+function pyWriteConfig(cfg) {
+  try { fs.writeFileSync(pyConfigFile(), JSON.stringify(cfg, null, 2), 'utf8'); } catch (e) {}
+}
+
+/* 候选顺序：用户在设置里指定的 > PATH 上的启动器 > 常见安装位置。
+ * Windows 上 `py` 是官方启动器，多数装了 Python 的机器都有它；
+ * `python` 在只装了商店版 stub 的机器上会弹微软商店，所以排在 py / python3 后面。 */
+function pyCandidates() {
+  const cfg = pyReadConfig();
+  const list = [];
+  if (cfg && cfg.exe) list.push(String(cfg.exe));
+  if (process.platform === 'win32') {
+    list.push('py', 'python3', 'python');
+    const bases = [process.env.LOCALAPPDATA, 'C:\\Python313', 'C:\\Python312', 'C:\\Python311']
+      .filter(Boolean);
+    for (const b of bases) {
+      for (const v of ['313', '312', '311', '310']) list.push(path.join(String(b), 'Python' + v, 'python.exe'));
+    }
+  } else {
+    list.push('python3', 'python', '/usr/local/bin/python3', '/opt/homebrew/bin/python3');
+  }
+  return [...new Set(list)];
+}
+
+/* 与 sysRun 的区别：这里要 stderr 和退出码、要往 stdin 喂参数、缓冲也大得多（收图） */
+function pyExec(exe, args, opts) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = v => { if (!done) { done = true; resolve(v); } };
+    const out = [], err = [];
+    let outLen = 0, errLen = 0, p = null;
+    try { p = require('child_process').spawn(exe, args, { windowsHide: true }); }
+    catch (e) { return finish({ code: -1, out: Buffer.alloc(0), err: Buffer.alloc(0), errText: String((e && e.message) || e) }); }
+    const t = setTimeout(() => {
+      try { p.kill(); } catch (e) {}
+      finish({ code: -1, out: Buffer.concat(out), err: Buffer.concat(err), errText: '执行超时' });
+    }, (opts && opts.timeout) || 30000);
+    p.stdout.on('data', d => { out.push(d); if ((outLen += d.length) > PY_OUT_MAX) { try { p.kill(); } catch (e) {} } });
+    p.stderr.on('data', d => { err.push(d); if ((errLen += d.length) > PY_OUT_MAX) { try { p.kill(); } catch (e) {} } });
+    p.on('error', e => { clearTimeout(t); finish({ code: -1, out: Buffer.concat(out), err: Buffer.concat(err), errText: String((e && e.message) || e) }); });
+    p.on('close', code => { clearTimeout(t); finish({ code, out: Buffer.concat(out), err: Buffer.concat(err), errText: '' }); });
+    if (opts && opts.input != null) { try { p.stdin.write(opts.input); } catch (e) {} }
+    try { p.stdin.end(); } catch (e) {}
+  });
+}
+
+/* 探测本机 Python：谁先应答用谁，结果缓存（pip 装完东西要 force 重探） */
+async function pyProbe(force) {
+  if (pyProbeCache && !force) return pyProbeCache;
+  const t0 = Date.now();
+  for (const exe of pyCandidates()) {
+    const r = await pyExec(exe,
+      ['-c', 'import sys,json;print(json.dumps({"exe":sys.executable,"ver":sys.version.split()[0]}))'],
+      { timeout: 8000 });
+    if (r.code !== 0 || r.errText) continue;
+    let info = null;
+    try { info = JSON.parse(r.out.toString('utf8').trim().split(/\r?\n/).pop()); } catch (e) {}
+    if (!info || !info.exe) continue;
+    const pil = await pyExec(exe, ['-c', 'import PIL;print(PIL.__version__)'], { timeout: 8000 });
+    pyProbeCache = {
+      ok: true, exe: info.exe, version: info.ver || '',
+      hasPillow: pil.code === 0, probedMs: Date.now() - t0
+    };
+    trace('python 探测：' + info.exe + ' ' + (info.ver || '') + '（Pillow ' + (pyProbeCache.hasPillow ? '有' : '无') + '）');
+    return pyProbeCache;
+  }
+  pyProbeCache = { ok: false, err: '本机没找到可用的 Python', probedMs: Date.now() - t0 };
+  trace('python 探测失败');
+  return pyProbeCache;
+}
+
+/* 跑一个自带脚本：约定 stdout 最后一行是 JSON 摘要，产物文件写在 --out 指向的目录 */
+async function pyRun(payload) {
+  const t0 = Date.now();
+  const st = await pyProbe(false);
+  if (!st.ok) return { ok: false, err: st.err };
+  const src = payload && payload.source;
+  /* 身份证行允许出现在文件头几行里（脚本第一行是 shebang，第二行才是标记） */
+  if (typeof src !== 'string' || src.indexOf(PY_MARKER) < 0 || src.indexOf(PY_MARKER) > 256) {
+    return { ok: false, err: '只接受本工具自带的脚本' };
+  }
+  if (src.length > PY_SRC_MAX) return { ok: false, err: '脚本源码超过上限' };
+  let dir = '';
+  try {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lumen-py-'));
+    fs.writeFileSync(path.join(dir, 'script.py'), src, 'utf8');
+    const r = await pyExec(st.exe, [path.join(dir, 'script.py'), '--out', dir], {
+      timeout: Math.min(Math.max(Number(payload && payload.timeout) || 30000, 3000), 120000),
+      input: JSON.stringify((payload && payload.args) || {})
+    });
+    const log = r.err.toString('utf8').trim();
+    if (r.errText) return { ok: false, err: r.errText, log };
+    let res = null;
+    const lines = r.out.toString('utf8').split(/\r?\n/);
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (!lines[i].trim()) continue;
+      try { res = JSON.parse(lines[i]); break; } catch (e) {}
+    }
+    if (!res) return { ok: false, err: '脚本没有返回结果', log };
+    if (!res.ok) return { ok: false, err: res.error || '脚本执行失败', log };
+    /* 收产物：文件名只允许安全字符、只在本临时目录里找（防路径穿越） */
+    const files = [];
+    for (const f of (res.files || [])) {
+      const name = String((f && f.name) || '');
+      if (!/^[\w.\-]+$/.test(name)) continue;
+      let buf;
+      try { buf = fs.readFileSync(path.join(dir, name)); } catch (e) { continue; }
+      if (!buf.length || buf.length > PY_FILE_MAX) continue;
+      const mime = /\.png$/i.test(name) ? 'image/png' : 'application/octet-stream';
+      files.push({ name, size: buf.length, mime, dataUrl: 'data:' + mime + ';base64,' + buf.toString('base64') });
+    }
+    return { ok: true, result: res, files, ms: Date.now() - t0, exe: st.exe, log };
+  } catch (e) {
+    return { ok: false, err: String((e && e.message) || e) };
+  } finally {
+    if (dir) { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {} }
+  }
+}
+
+/* 补依赖：白名单，页面只能点「装 Pillow」这类按钮，不能装任意包 */
+const PY_PKGS = { pillow: 'pillow', numpy: 'numpy' };
+ipcMain.handle('lumen:py-status', (_e, force) => pyProbe(!!force));
+ipcMain.handle('lumen:py-run', (_e, payload) => pyRun(payload || {}));
+ipcMain.handle('lumen:py-set-exe', (_e, exe) => {
+  const v = String(exe || '').trim();
+  const cfg = pyReadConfig();
+  if (v) cfg.exe = v; else delete cfg.exe;
+  pyWriteConfig(cfg);
+  pyProbeCache = null;
+  return pyProbe(false);
+});
+ipcMain.handle('lumen:py-install', async (_e, name) => {
+  const pkg = PY_PKGS[String(name || '').toLowerCase()];
+  if (!pkg) return { ok: false, err: '只允许安装 ' + Object.keys(PY_PKGS).join(' / ') };
+  const st = await pyProbe(false);
+  if (!st.ok) return { ok: false, err: st.err };
+  trace('python pip install ' + pkg);
+  const r = await pyExec(st.exe, ['-m', 'pip', 'install', '--user', '--disable-pip-version-check', pkg],
+    { timeout: 300000 });
+  pyProbeCache = null;
+  return {
+    ok: r.code === 0 && !r.errText,
+    err: r.code === 0 ? '' : '安装失败',
+    log: (r.out.toString('utf8') + '\n' + r.err.toString('utf8')).trim().slice(-8000)
+  };
+});
+
+/* 本地工具用不上 GPU 加速：禁掉，免得在无显卡 / 驱动异常的环境里白耗。
+ *
+ * ⚠️ 千万别开 --in-process-gpu（v0.16.10 的闪退就是它）：那个开关把 Chromium 的 GPU
+ *    逻辑并进主进程、和 Node 共用同一个事件循环，于是 GPU 层任何 fail-fast 都会
+ *    直接掀翻整个应用 —— 外部表现就是「点开本机信息就闪退 / 后台正跑的活全断」。
+ *    实测现场：ucrtbase.dll 报 0xC0000409（__fastfail），发生在主进程派生子进程
+ *    （本机信息问 PowerShell 要显卡型号）之后的下一次事件循环里。
+ *    留着独立 GPU 进程时，同样的崩溃只会落在子进程上，Chromium 自己降级重启，
+ *    主进程和用户数据毫发无伤 —— 拿「一点 GPU 开销」换「应用不被拖死」，值。
+ *
  * no-sandbox：本机（无显卡 VM）渲染进程沙箱起不来；应用只加载本地文件、外链全部交系统浏览器，风险可控。 */
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('in-process-gpu');
 app.commandLine.appendSwitch('no-sandbox');
 
 /* ============================================================
@@ -729,6 +1322,7 @@ if (!gotLock) {
       initUpdater();                   /* 必须在建窗口前：要向窗口传「能否应用内更新」 */
       createWindow();
       createTray();
+      clipStart();                     /* 剪贴板历史采集（托盘常驻期间也一直记） */
       /* LUMEN_OPEN_STATUS=1：启动后自动打开壳状态页（排障用，也可以配进快捷方式） */
       if (String(process.env.LUMEN_OPEN_STATUS || '') === '1') {
         setTimeout(openStatusWindow, 1200);
