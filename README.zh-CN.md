@@ -8,6 +8,8 @@
 
 > 当前版本 **v0.17.0** ｜ 77 个工具，已实装 42 个
 
+**官网与在线体验**：[lumen-workbench.app.workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL) —— 浏览器里直接试用全部 10 个图片工具，其余功能下载 Windows 版即可解锁。
+
 ![主界面](docs/screenshot-main.jpg)
 
 ## 特点
