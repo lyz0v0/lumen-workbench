@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+# 体验版是纯 JS 应用，抓取它只会消耗配额，页面本身由首页介绍覆盖
+Disallow: /app/
+
+# AI 搜索 / 助手爬虫：欢迎抓取官网与 README 介绍
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://lyz0v0.github.io/lumen-workbench/sitemap.xml

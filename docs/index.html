@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumen 工作台 — 77 个本地工具 + AI 助手，数据不出机</title>
+<meta name="description" content="Lumen 是一个装在本机的 AI 工作台：图片、PDF、音视频、电商、开发等 77 个常用工具与 AI 助手，全部本地处理，免注册登录，Windows 免费使用。在线体验版可直接试用全部图片工具。">
+<meta name="keywords" content="Lumen,Lumen 工作台,本地 AI 工作台,BYOK,离线工具,图片工具,PDF 工具,AI 助手,Windows 工具集">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="canonical" href="https://lyz0v0.github.io/lumen-workbench/">
+<link rel="alternate" hreflang="zh-CN" href="https://lyz0v0.github.io/lumen-workbench/">
+<link rel="alternate" hreflang="x-default" href="https://lyz0v0.github.io/lumen-workbench/">
+
+<!-- 社交 / IM 分享卡片 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lumen 工作台">
+<meta property="og:url" content="https://lyz0v0.github.io/lumen-workbench/">
+<meta property="og:title" content="Lumen 工作台 — 77 个本地工具 + AI 助手">
+<meta property="og:description" content="图片、PDF、音视频、电商、开发等 77 个工具与 BYOK AI 助手，全部在你的电脑上跑，文件不出本机。在线可直接试用图片工具。">
+<meta property="og:image" content="https://lyz0v0.github.io/lumen-workbench/assets/shot-home.png">
+<meta property="og:image:alt" content="Lumen 工作台主界面">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lumen 工作台 — 77 个本地工具 + AI 助手">
+<meta name="twitter:description" content="图片、PDF、音视频、电商、开发等 77 个工具与 BYOK AI 助手，全部在你的电脑上跑，文件不出本机。">
+<meta name="twitter:image" content="https://lyz0v0.github.io/lumen-workbench/assets/shot-home.png">
+
+<!-- 结构化数据：让 Google 富结果与 AI 搜索能读懂这是什么 -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Lumen 工作台",
+  "alternateName": "Lumen Workbench",
+  "url": "https://lyz0v0.github.io/lumen-workbench/",
+  "description": "本地优先的个人 AI 工作台：图片、PDF、音视频、电商、开发等 77 个工具与 BYOK AI 助手，全部在本机处理，文件不上传服务器。",
+  "applicationCategory": "UtilitiesApplication",
+  "applicationSubCategory": "File Converter",
+  "operatingSystem": "Windows 10, Windows 11",
+  "softwareVersion": "0.17.0",
+  "inLanguage": ["zh-CN", "en"],
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+  "downloadUrl": "https://github.com/lyz0v0/lumen-workbench/releases/latest/download/lumen-workbench-0.17.0-setup.exe",
+  "screenshot": "https://lyz0v0.github.io/lumen-workbench/assets/shot-home.png",
+  "featureList": "图片格式转换、图片压缩、水印、裁剪、AI 抠图、证件照、长图拼接、PDF 工具、音视频工具、AI 助手（BYOK，OpenAI 兼容）",
+  "author": { "@type": "Person", "name": "lyz0v0", "url": "https://github.com/lyz0v0" },
+  "sameAs": ["https://github.com/lyz0v0/lumen-workbench", "https://gitee.com/lyz0v0/lumen-workbench"]
+}
+</script>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="anim">
+
+<!-- 雨夜便利店背景（fixed，压深色渐变保可读） -->
+<div class="bg-photo" aria-hidden="true"></div>
+
+<!-- ================= 顶部导航 ================= -->
+<nav class="topnav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <img src="assets/logo.png" alt="Lumen 工作台" class="brand-logo" data-en-alt="Lumen Workbench">
+      <span class="brand-name">Lumen <em data-en="Workbench">工作台</em></span>
+    </a>
+    <div class="nav-links">
+      <a href="#demo" data-en="Live demo">在线体验</a>
+      <a href="#tools" data-en="Features">功能</a>
+      <a href="#ai" data-en="AI assistant">AI 助手</a>
+      <a href="#download" data-en="Download">下载</a>
+      <a href="#faq" data-en="FAQ">常见问题</a>
+    </div>
+    <div class="nav-acts">
+      <div class="lang-sw" role="group" aria-label="Language / 语言">
+        <button type="button" data-lang="zh" class="on" aria-label="中文">中</button>
+        <button type="button" data-lang="en" aria-label="English">EN</button>
+      </div>
+      <a class="btn btn-ghost" href="app/Lumen.html?demo=1" data-en="Live demo">在线体验</a>
+      <a class="btn btn-github" href="https://github.com/lyz0v0/lumen-workbench" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= Hero ================= -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-pill"><span class="dot"></span><span data-en="Local-first · Open source &amp; free · v0.17.0">本地优先 · 开源免费 · v0.17.0</span></div>
+    <h1 data-en='All the tools you need,<br><span class="grad">right inside your PC</span>'>把一整箱工具，<br><span class="grad">装进你的电脑</span></h1>
+    <p class="hero-sub" data-en='77 everyday tools plus an AI assistant: images, PDF, audio &amp; video, e-commerce, dev…<br class="lg-only">
+      Everything runs on your machine. Your files never leave it, and there is no sign-up.'>
+      77 个常用工具 + AI 助手：图片、PDF、音视频、电商、开发……<br class="lg-only">
+      全部在本机处理，数据不出机，不需要注册登录。
+    </p>
+    <div class="hero-acts">
+      <a class="btn btn-primary btn-lg" href="app/Lumen.html?demo=1"><span data-en="Try it in the browser">立即在线体验</span>
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="btn btn-outline btn-lg" href="#download" data-en="Download for Windows">下载 Windows 版</a>
+    </div>
+    <p class="hero-note" data-en="The demo opens all 10 image tools (fully usable) · The full build works offline">体验版只开放图片工具（10 个，全部可用）· 完整版下载后离线可用</p>
+
+    <figure class="hero-shot">
+      <img src="assets/shot-home.png" alt="Lumen 工作台主界面" loading="eager" data-en-alt="Lumen Workbench main screen">
+    </figure>
+  </div>
+</header>
+
+<!-- ================= 数据条 ================= -->
+<section class="stats">
+  <div class="wrap stats-grid reveal">
+    <div class="stat"><b>77</b><span data-en="tools">个工具</span></div>
+    <div class="stat"><b>42</b><span data-en="implemented">个已实装</span></div>
+    <div class="stat"><b>9</b><span data-en="categories">大分类</span></div>
+    <div class="stat"><b>0</b><span data-en="data uploads">次数据上传</span></div>
+  </div>
+</section>
+
+<!-- ================= 在线体验区 ================= -->
+<section class="sec" id="demo">
+  <div class="wrap demo-grid reveal-group">
+    <div class="demo-copy reveal">
+      <h2 data-en='No install needed — <span class="grad">try 10 image tools first</span>'>不用下载，<span class="grad">先试 10 个图片工具</span></h2>
+      <p data-en='A “mini Lumen” opens right in your browser: <strong>all 10 image tools</strong> work exactly as they do in the app — format conversion, compression, watermark, crop, AI background removal, ID photo, long-image stitching, grid collage, black &amp; white, and PDF export.'>浏览器里直接打开一个「迷你版 Lumen」：图片工具的<strong>全部 10 个功能</strong>原样可用——
+         格式转换、压缩、水印、裁剪、AI 抠图、证件照换底、长图拼接、网格拼图、黑白、转 PDF。</p>
+      <ul class="demo-rules">
+        <li><svg viewBox="0 0 24 24"><path d="M20 6.6L9.6 17 4 11.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-en="Images are processed in your own browser — nothing is uploaded">图片在你自己的浏览器里处理，不上传服务器</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M20 6.6L9.6 17 4 11.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-en="AI matting uses a local model, also fully on-device">AI 抠图用本地模型，同样不出机</span></li>
+        <li><svg viewBox="0 0 24 24"><path d="M20 6.6L9.6 17 4 11.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-en="The other 67 tools and the AI assistant come with the Windows build">其余 67 个工具与 AI 助手，下载 Windows 版获得完整体验</span></li>
+      </ul>
+      <div class="hero-acts" style="margin-top:26px">
+        <a class="btn btn-primary btn-lg" href="app/Lumen.html?demo=1"><span data-en="Open the live demo">打开在线体验版</span>
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="demo-shot reveal">
+      <img src="assets/shot-imgtools.png" alt="在线体验版 · 图片工具" loading="lazy" data-en-alt="Live demo · image tools">
+      <span class="shot-tag" data-en="Actual demo screenshot">体验版实拍</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 功能：九大类 ================= -->
+<section class="sec" id="tools">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2 data-en="Nine categories, nothing left out">九大类工具，一个都不少</h2>
+      <p data-en="The popular ones are already shipped and the rest land weekly — the full build always shows the latest progress.">常用的那一批已经实装，剩下的在按周补齐 —— 完整版里随时看到最新进度。</p>
+    </div>
+
+    <div class="cat-grid reveal-group">
+      <a class="cat-card cat-hot" href="app/Lumen.html?demo=1">
+        <div class="cat-top">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15.5l-4.5-4.5L7 20"/></svg>
+          <span class="cat-flag" data-en="Try online">可在线体验</span>
+        </div>
+        <h3 data-en="Image tools">图片工具</h3>
+        <p data-en="Convert / compress / watermark / crop / AI matting / ID photo / stitch / PDF">格式转换 / 压缩 / 水印 / 裁剪 / AI 抠图 / 证件照 / 拼接 / 转 PDF</p>
+        <span class="cat-n" data-en="10 tools · all ready">10 个 · 全部可用</span>
+      </a>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/><path d="M9 13h1.8a1.4 1.4 0 0 1 0 2.8H9zM9 15.8V18"/></svg></div>
+        <h3 data-en="PDF tools">PDF 工具</h3><p data-en="Merge / split / page editing / watermark / seal / compress / extract text">合并 / 拆分 / 页面编辑 / 水印 / 骑缝章 / 压缩 / 提取文字</p>
+        <span class="cat-n" data-en="8 tools · all ready">8 个 · 全部可用</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="14" height="14" rx="2.5"/><path d="M16.5 10l5-3v10l-5-3z"/></svg></div>
+        <h3 data-en="Audio &amp; video">音视频</h3><p data-en="Extract audio / compress video / screen recording / merge">提取音频 / 视频压缩 / 屏幕录制 / 合成</p>
+        <span class="cat-n" data-en="6 tools · 3 ready">6 个 · 3 个可用</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></svg></div>
+        <h3 data-en="Text &amp; encoding">文本与编码</h3><p data-en="Batch rename / audio to text / Markdown / clipboard history">批量重命名 / 音频转文字 / Markdown / 剪贴板历史</p>
+        <span class="cat-n" data-en="13 tools · in progress">13 个 · 持续补齐</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg></div>
+        <h3 data-en="Dev tools">开发工具</h3><p data-en="QR code / color picker / system info">二维码 / 取色器 / 本机信息</p>
+        <span class="cat-n" data-en="7 tools · in progress">7 个 · 持续补齐</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><path d="M6.3 8.5h11.4l-.95 10.4a1.7 1.7 0 0 1-1.7 1.6H8.95a1.7 1.7 0 0 1-1.7-1.6z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/></svg></div>
+        <h3 data-en="E-commerce">电商工具</h3><p data-en="Prohibited-word check / bulk parcel tracking / profit pricing / discount calculator">违禁词检测 / 快递批量查询 / 利润定价 / 活动折扣测算</p>
+        <span class="cat-n" data-en="23 tools · in progress">23 个 · 持续补齐</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10.5" rx="3.2"/><path d="M7 10.4v4.2M4.9 12.5h4.2"/><circle cx="16" cy="11.2" r="1.15"/><circle cx="18.4" cy="13.8" r="1.15"/></svg></div>
+        <h3 data-en="Creative">创意工具</h3><p data-en="Pixel avatar / random draw / pomodoro timer">像素头像 / 随机抽签 / 番茄钟</p>
+        <span class="cat-n" data-en="3 tools · all ready">3 个 · 全部可用</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.6H20l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8L4 8.6h6.1z"/></svg></div>
+        <h3 data-en="AI skill packs">AI 技能包</h3><p data-en="Sheet cleanup / meeting notes / PDF extraction / PPT builder — invoked by the assistant">表格清洗 / 会议纪要 / PDF 提取 / PPT 制作 等技能随 AI 助手调用</p>
+        <span class="cat-n" data-en="3 tools · all ready">3 个 · 全部可用</span>
+      </div>
+      <div class="cat-card">
+        <div class="cat-top"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="16" cy="12" r="1.2"/></svg></div>
+        <h3 data-en="Other">其他</h3><p data-en="Web image extraction / QR decode / link tools">网页图片提取 / 二维码解码 / 友情链接</p>
+        <span class="cat-n" data-en="4 tools · all ready">4 个 · 全部可用</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= AI 助手 ================= -->
+<section class="sec" id="ai">
+  <div class="wrap ai-grid">
+    <div class="ai-shot reveal">
+      <img src="assets/shot-ai.png" alt="Lumen AI 助手" loading="lazy" data-en-alt="Lumen AI assistant">
+      <span class="shot-tag" data-en="AI assistant">AI 助手</span>
+    </div>
+    <div class="ai-copy reveal">
+      <h2 data-en='An AI assistant with <span class="grad">the keys in your hands</span>'>自带 AI 助手，<span class="grad">钥匙在你手里</span></h2>
+      <p data-en="BYOK (Bring Your Own Key): plug in any OpenAI-compatible endpoint. No middle server ever touches your conversation.">BYOK（Bring Your Own Key）：填入任意 OpenAI 兼容接口即可使用，没有中间服务器过手你的对话。</p>
+      <ul class="feat-list">
+        <li>
+          <b data-en="Switch models freely">多模型随意切</b>
+          <span data-en="DeepSeek / GLM / Kimi / local Ollama… keep several connections and switch with one click next to the input box.">DeepSeek / GLM / Kimi / 本地 Ollama……多套连接并存，输入框旁一键快切。</span>
+        </li>
+        <li>
+          <b data-en="Auto routing &amp; failover">自动路由与故障转移</b>
+          <span data-en="Picks a model per task (vision / code / long text) and moves to the next one automatically when a model is down — and tells you it did.">按任务挑模型（视觉 / 代码 / 长文），当前模型不可用自动换下一个，还会告诉你换了。</span>
+        </li>
+        <li>
+          <b data-en="Built-in skills">内置技能</b>
+          <span data-en="Deep search, coding assistant and translation work out of the box; tool chains auto-continue for up to 25 steps.">深度搜索、代码助手、翻译开箱即用，调用工具最多 25 步自动续跑。</span>
+        </li>
+        <li>
+          <b data-en="Knows the workbench itself">了解工作台自己</b>
+          <span data-en="Ask “what image tools does Lumen have?” and it answers directly, with no web search.">问它「Lumen 有哪些图片工具」直接答，不用联网搜索。</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 为什么是本地 ================= -->
+<section class="sec" id="local">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2 data-en="Why everything stays local">为什么坚持「本地处理」</h2>
+      <p data-en="The tools run on your computer, so your files never have to leave it.">工具跑在你的电脑上，文件就不用出门。</p>
+    </div>
+    <div class="why-grid reveal-group">
+      <div class="why-card">
+        <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <h3 data-en="Files never leave">数据不出机</h3>
+        <p data-en="Images, PDFs and videos are processed on-device — most tools even work offline.">图片、PDF、视频全在本机处理，断网也能用大部分工具。</p>
+      </div>
+      <div class="why-card">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+        <h3 data-en="No account">免注册登录</h3>
+        <p data-en="No account system at all. Open it and every feature is there — no quotas, no ad pop-ups.">没有账号体系，打开就是全部功能，没有配额也没有广告弹窗。</p>
+      </div>
+      <div class="why-card">
+        <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+        <h3 data-en="Open source">开源可查</h3>
+        <p data-en="The code lives on GitHub. What it does is plain to see — review and contributions welcome.">代码在 GitHub 上，做了什么一目了然，欢迎审阅与贡献。</p>
+      </div>
+      <div class="why-card">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.15-1.4l2.1-1.6-2-3.4-2.4 1a7 7 0 0 0-2.4-1.4L13.7 2h-3.4l-.45 2.6a7 7 0 0 0-2.4 1.4l-2.4-1-2 3.4 2.1 1.6A7 7 0 0 0 5 12c0 .5.05.9.15 1.4l-2.1 1.6 2 3.4 2.4-1a7 7 0 0 0 2.4 1.4l.45 2.6h3.4l.45-2.6a7 7 0 0 0 2.4-1.4l2.4 1 2-3.4-2.1-1.6c.1-.5.15-.9.15-1.4z"/></svg>
+        <h3 data-en="BYOK">BYOK 自带钥匙</h3>
+        <p data-en="AI runs on your own API key, connecting straight to the provider. No middleman.">AI 功能用自己的 API Key，直连模型服务商，不经过任何中间人。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 下载 ================= -->
+<section class="sec" id="download">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <h2 data-en="Download the full Windows build">下载 Windows 完整版</h2>
+      <p data-en="Windows 10 / 11 · Free · Pick either package; updates are checked automatically.">Windows 10 / 11 · 免费 · 两个包随便挑，装完自动检查更新。</p>
+    </div>
+    <div class="dl-grid reveal-group">
+      <div class="dl-card dl-hot">
+        <span class="dl-flag" data-en="Recommended">推荐</span>
+        <h3 data-en="Installer">安装版</h3>
+        <p class="dl-size">~89 MB · setup.exe</p>
+        <p class="dl-desc" data-en="Double-click to install: desktop shortcut, tray service on startup, automatic updates.">双击安装，桌面快捷方式 + 开机托盘常驻，支持自动更新。</p>
+        <!-- 发版时同步资产名里的版本号 -->
+        <a class="btn btn-primary btn-lg btn-full" href="https://github.com/lyz0v0/lumen-workbench/releases/latest/download/lumen-workbench-0.17.0-setup.exe" data-en="Download installer">下载安装版</a>
+        <p class="dl-alt"><span data-en="Gitee mirror:">Gitee 备用：</span><a href="https://gitee.com/lyz0v0/lumen-workbench/releases/download/v0.17.0/lumen-workbench-0.17.0-setup.exe">setup.exe</a></p>
+      </div>
+      <div class="dl-card">
+        <h3 data-en="Portable">免安装版</h3>
+        <p class="dl-size">~12 MB · zip</p>
+        <p class="dl-desc" data-en="Unzip and run — one green folder, handy on a USB stick or where installing is not an option.">解压即用，绿色单目录，适合 U 盘携带或不想装软件的场合。</p>
+        <a class="btn btn-outline btn-lg btn-full" href="https://github.com/lyz0v0/lumen-workbench/releases/latest/download/lumen-workbench-v0.17.0.zip" data-en="Download zip">下载 zip</a>
+        <p class="dl-alt"><span data-en="Gitee mirror:">Gitee 备用：</span><a href="https://gitee.com/lyz0v0/lumen-workbench/releases/download/v0.17.0/lumen-workbench-v0.17.0.zip">zip</a></p>
+      </div>
+    </div>
+    <p class="dl-more"><span data-en="Older versions and full changelogs:">历史版本与完整更新日志：</span>
+      <a href="https://github.com/lyz0v0/lumen-workbench/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a> ·
+      <a href="https://gitee.com/lyz0v0/lumen-workbench/releases" target="_blank" rel="noopener noreferrer" data-en="Gitee releases">Gitee 发行版</a>
+    </p>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="sec" id="faq">
+  <div class="wrap wrap-narrow">
+    <div class="sec-head reveal">
+      <h2 data-en="FAQ">常见问题</h2>
+    </div>
+    <details>
+      <summary data-en="How is the demo different from the full build?">在线体验版和完整版差在哪？</summary>
+      <p data-en="The demo opens all 10 image tools so you can feel the interaction and speed. The full build adds all 77 tools, the AI assistant, desktop clipboard history, system info and other desktop-only capabilities.">体验版只开放图片工具的全部 10 个功能，用来快速感受交互与处理速度。完整版包含全部 77 个工具、AI 助手、桌面剪贴板历史、本机信息等桌面能力。</p>
+    </details>
+    <details>
+      <summary data-en="Does the demo upload my images?">体验版会上传我的图片吗？</summary>
+      <p data-en="No. The demo is the workbench itself, trimmed down; image processing happens entirely in your browser, and the AI matting model ships with the page and runs on-device.">不会。体验版就是工作台本体裁剪出来的网页，图片处理全在你的浏览器里完成；AI 抠图用的模型也是页面自带的，识别同样在本机跑。</p>
+    </details>
+    <details>
+      <summary data-en="Does the AI assistant cost money? Who gets my key?">AI 助手要花钱吗？Key 给谁？</summary>
+      <p data-en="Lumen itself is free. AI is BYOK: you enter your own API key in Settings and requests go straight from your machine to the model provider. There is no Lumen server, and your conversations are never seen.">Lumen 本身免费，AI 功能自带钥匙（BYOK）：你在设置里填自己的 API Key，请求从你的电脑直连模型服务商，Lumen 没有中间服务器，也看不到你的对话。</p>
+    </details>
+    <details>
+      <summary data-en="Is there a macOS or Linux build?">有 macOS / Linux 版吗？</summary>
+      <p data-en="Windows only for now. Some users have run the portable zip under Wine, but we do not promise it; the browser demo works in every modern browser.">目前只有 Windows。免安装 zip 版在 Wine 上有玩家跑通过，但不作承诺；网页体验版在所有现代浏览器都能用。</p>
+    </details>
+    <details>
+      <summary data-en="Where do I report issues?">在哪里反馈问题？</summary>
+      <p><span data-en="Open an issue on ">到 </span><a href="https://github.com/lyz0v0/lumen-workbench/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a><span data-en=", or use “Home → Feedback” inside the workbench."> 提交，或在工作台「主界面 → 意见反馈」里直接说。</span></p>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 页脚 ================= -->
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <div class="foot-brand">
+      <img src="assets/logo.png" alt="" class="brand-logo">
+      <div>
+        <div class="brand-name">Lumen <em data-en="Workbench">工作台</em></div>
+        <div class="foot-ver" data-en="v0.17.0 · Local-first AI workbench">v0.17.0 · 本地优先的 AI 工作台</div>
+      </div>
+    </div>
+    <div class="foot-links">
+      <a href="https://github.com/lyz0v0/lumen-workbench" target="_blank" rel="noopener noreferrer" data-en="GitHub repo">GitHub 仓库</a>
+      <a href="https://gitee.com/lyz0v0/lumen-workbench" target="_blank" rel="noopener noreferrer" data-en="Gitee mirror">Gitee 镜像</a>
+      <a href="https://github.com/lyz0v0/lumen-workbench/issues" target="_blank" rel="noopener noreferrer" data-en="Report an issue">反馈问题</a>
+      <a href="app/Lumen.html?demo=1" data-en="Live demo">在线体验</a>
+    </div>
+  </div>
+  <div class="wrap foot-copy" data-en="© 2026 Lumen Workbench · The online demo ships with this site and matches the full build’s image tools">© 2026 Lumen 工作台 · 图片工具在线体验版随官网分发，功能与完整版一致</div>
+</footer>
+
+<script>
+/* 滚动进场：卡片组的孩子自动登记并按列错峰；其余 .reveal 各自触发 */
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var groups = document.querySelectorAll('.reveal-group');
+  for(var g=0; g<groups.length; g++){
+    var kids = groups[g].children;
+    for(var i=0; i<kids.length; i++){
+      kids[i].classList.add('reveal');
+      kids[i].style.setProperty('--d', (i % 4) * 0.09 + 's');
+    }
+  }
+  if(reduce || !('IntersectionObserver' in window)){
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(en){
+      if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+<script>
+/* 中英切换：Chinese markup is the source; English lives in data-en / data-en-alt.
+   首次访问跟随浏览器语言，手动选择记在 localStorage。 */
+(function(){
+  var KEY = 'lumen-site-lang';
+  var META = {
+    zh: {
+      title: 'Lumen 工作台 — 77 个本地工具 + AI 助手，数据不出机',
+      desc: 'Lumen 是一个装在本机的 AI 工作台：图片、PDF、音视频、电商、开发等 77 个常用工具与 AI 助手，全部本地处理，免注册登录，Windows 免费使用。在线体验版可直接试用全部图片工具。'
+    },
+    en: {
+      title: 'Lumen Workbench — 77 local tools + AI assistant, files never leave your machine',
+      desc: 'Lumen is an AI workbench that runs on your own machine: 77 everyday tools for images, PDF, audio/video, e-commerce and development, plus an AI assistant — all processed locally, no sign-up, free on Windows. Try all 10 image tools in the browser demo.'
+    }
+  };
+
+  var nodes = [].slice.call(document.querySelectorAll('[data-en]'));
+  nodes.forEach(function(el){ el.__zh = el.innerHTML; });
+  var imgs = [].slice.call(document.querySelectorAll('img[data-en-alt]'));
+  imgs.forEach(function(el){ el.__zhAlt = el.getAttribute('alt') || ''; });
+
+  var cur = 'zh';
+
+  function apply(lang, remember){
+    cur = (lang === 'en') ? 'en' : 'zh';
+    var en = cur === 'en';
+
+    nodes.forEach(function(el){
+      el.innerHTML = en ? el.getAttribute('data-en') : el.__zh;
+    });
+    imgs.forEach(function(el){
+      el.setAttribute('alt', en ? el.getAttribute('data-en-alt') : el.__zhAlt);
+    });
+
+    document.documentElement.lang = en ? 'en' : 'zh-CN';
+    document.title = META[cur].title;
+    var d = document.querySelector('meta[name="description"]');
+    if(d) d.setAttribute('content', META[cur].desc);
+
+    [].forEach.call(document.querySelectorAll('.lang-sw button'), function(b){
+      b.classList.toggle('on', b.getAttribute('data-lang') === cur);
+      b.setAttribute('aria-pressed', b.getAttribute('data-lang') === cur ? 'true' : 'false');
+    });
+
+    if(remember){ try{ localStorage.setItem(KEY, cur); }catch(e){} }
+  }
+
+  [].forEach.call(document.querySelectorAll('.lang-sw button'), function(b){
+    b.addEventListener('click', function(){ apply(b.getAttribute('data-lang'), true); });
+  });
+
+  var saved = null;
+  try{ saved = localStorage.getItem(KEY); }catch(e){}
+  var initial = saved || ((navigator.language || '').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en');
+  apply(initial, false);
+})();
+</script>
+</body>
+</html>
