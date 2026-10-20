@@ -8,6 +8,8 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 
 > Current version **v0.17.0** | 77 tools, 42 fully implemented
 
+**Website & live demo**: [lumen-workbench.app.workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL) — try all 10 image tools in the browser, download the Windows build for everything else.
+
 ![Main screen](docs/screenshot-main.jpg)
 
 ## Highlights
