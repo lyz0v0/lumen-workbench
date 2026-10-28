@@ -223,6 +223,16 @@
         <div class="panel">
           <div class="panel-head"><h3>连接</h3><span class="ai-cfg-hint" id="aiConnHint"></span></div>
           <div class="panel-body ai-cfg-body">
+            <div class="ai-conn-list" id="aiConnList"></div>
+            <div class="ai-conn-bar">
+              <button class="btn btn-ghost" id="aiConnNew">添加模型</button>
+              <label class="ai-conn-sw"><input type="checkbox" id="aiAutoRoute"><span>自动选模型</span></label>
+              <label class="ai-conn-sw"><input type="checkbox" id="aiFailover"><span>失败自动切换</span></label>
+            </div>
+            <div class="ai-f">
+              <span>备注名</span>
+              <input class="txt-input" id="aiConnName" placeholder="例如：DeepSeek 主力 / 便宜快模型" value="">
+            </div>
             <div class="ai-f">
               <span>服务商</span>
               <div class="ai-prov" id="aiProv"></div>
@@ -247,9 +257,15 @@
               <div id="aiModelPickWrap"></div>
               <datalist id="aiModelList"></datalist>
             </div>
+            <div class="ai-f">
+              <span>用途标签</span>
+              <div class="ai-tags" id="aiConnTags"></div>
+              <div class="hint" data-tone="info"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>打开「自动选模型」后按这些标签挑：短问题走「快速」、带图必须「看图」、代码与推理走「强推理」、超长文本走「长文档」。都不标就当日常模型。</span></div>
+            </div>
             <div class="ai-cfg-actions">
               <button class="btn btn-ghost" id="aiTest">测试连接</button>
-              <button class="btn btn-primary" id="aiSave">保存配置</button>
+              <button class="btn btn-ghost" id="aiConnDel">删除这条</button>
+              <button class="btn btn-primary" id="aiSave">保存到列表</button>
             </div>
             <div class="ai-test" id="aiTestOut"></div>
           </div>
@@ -292,8 +308,9 @@
             <div class="ai-f">
               <span>搜索服务商</span>
               <div class="ai-prov" id="aiWebProv"></div>
+              <div class="ai-web-note" id="aiWebKeyNote"></div>
             </div>
-            <div class="ai-f">
+            <div class="ai-f" id="aiWebKeyRow">
               <span>搜索 API Key</span>
               <div class="ai-key">
                 <input class="txt-input" id="aiWebKey" type="password" placeholder="搜索服务的 Key，与对话 Key 相互独立" value="" autocomplete="off" spellcheck="false">
@@ -314,7 +331,7 @@
               <button class="btn btn-ghost" id="aiWebTest">测试搜索</button>
             </div>
             <div class="ai-test" id="aiWebTestOut"></div>
-            <div class="hint" data-tone="info"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>博查：open.bochaai.com 申请（国内直连，按次付费约 ¥0.03）；智谱：open.bigmodel.cn 申请（可复用 GLM 的 Key，约 ¥0.01/次）。两个接口都允许浏览器直连；Tavily 等海外搜索接口不允许跨域，故未收录。填好 Key 后回对话页点「联网」开关使用。</span></div>
+            <div class="hint" data-tone="info"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>DeepSeek：直接复用「连接」里填的对话 Key，不用另外申请（约 ¥5 / 1000 次，失败不计费）；博查：open.bochaai.com（约 ¥0.03/次）；智谱：open.bigmodel.cn（可复用 GLM 的 Key）。都允许浏览器直连。填好后回对话页点「联网」开关。</span></div>
           </div>
         </div>
       </div>
