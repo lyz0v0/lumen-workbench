@@ -6,7 +6,7 @@
 
 本地优先的个人 AI 工作台。整个应用就是三个文件（`index.html` + `app.js` + `style.css`），浏览器双击 `Lumen.html` 即用；也可以用内置的 Electron 桌面壳跑成桌面窗口，或直接装 Windows 安装包。
 
-> 当前版本 **v0.17.0** ｜ 77 个工具，已实装 42 个
+> 当前版本 **v0.19.0** ｜ 80 个工具，已实装 58 个
 
 **官网与在线体验**：[lyz0v0.github.io/lumen-workbench](https://lyz0v0.github.io/lumen-workbench/) —— 浏览器里直接试用全部 10 个图片工具，其余功能下载 Windows 版即可解锁。国内访问更快：[workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL)。
 
@@ -44,7 +44,7 @@
 
 ## 工具
 
-目前共 **77 个工具**，已实装 **42 个**，其余为占位、陆续实装中。
+目前共 **80 个工具**，已实装 **58 个**，其余为占位、陆续实装中。
 
 - **图片**：格式转换、压缩、水印、裁剪缩放、图片转 PDF
 - **PDF**：合并、拆分、页面编辑、水印、骑缝章、压缩、转图片、提取文字
