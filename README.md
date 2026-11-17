@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v0.22.0** | 80 tools, 64 fully implemented
+> Current version **v1.0.0** | 54 tools, all implemented
 
 **Website & live demo**: [lyz0v0.github.io/lumen-workbench](https://lyz0v0.github.io/lumen-workbench/) — try all 10 image tools in the browser, download the Windows build for everything else. Faster mirror in mainland China: [workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL).
 
@@ -43,14 +43,13 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 
 ## Tools
 
-Currently **80 tools**, of which **64 are fully implemented**; the rest are placeholders being rolled out.
+**54 tools across 7 categories, all fully implemented — no placeholders.** As of 1.0, the e-commerce category and Accio Work content have been retired to focus on a local-first toolbox.
 
 - **Images**: format conversion, compression, watermark, crop & resize, images to PDF
 - **PDF**: merge, split, page editing, watermark, paging seal, compress, to images, extract text
-- **E-commerce**: banned-word detection, parcel tracking, profit & pricing calculator, price notes
 - **AI workbench** (sidebar entry, "AI Assistant"): the assistant calls local tools right in the chat, and "use tools" mode auto-continues past the step limit to finish multi-step tasks in one run; also a prompt optimizer (two-mode rewrite / iterate / score / side-by-side compare, with {{variable}} guarding), image attachments, session management, a prompt library and custom skills (BYOK, multi-model / streaming / local sessions)
-- **Accio Work**: skill-pack tutorial center (9 packs) & user guide
-- **Others**: web image extractor, QR code generator / scanner, video prompt helper, and more
+- **Dev tools**: UUID generator, timestamp converter, cron builder, API tester, color converter, QR code generator / scanner
+- **Others**: web image extractor, video prompt helper, friend links, and more
 
 See [Releases](https://github.com/lyz0v0/lumen-workbench/releases) for per-version changes.
 
