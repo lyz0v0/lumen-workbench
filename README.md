@@ -6,7 +6,7 @@ English | [中文](./README.zh-CN.md)
 
 A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
 
-> Current version **v1.0.1** | 54 tools, all implemented
+> Current version **v1.1.0** | 54 tools, all implemented
 
 **Website & live demo**: [lyz0v0.github.io/lumen-workbench](https://lyz0v0.github.io/lumen-workbench/) — try all 10 image tools in the browser, download the Windows build for everything else. Faster mirror in mainland China: [workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL).
 
