@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumen 灵动岛</title>
+<link rel="stylesheet" href="./island.css">
+</head>
+<body data-state="collapsed" data-boot="1">
+<div id="island">
+
+  <!-- 收起态：胶囊。宽度必须与主进程 ISLAND.CAP_W 一致（热区按它算） -->
+  <div class="cap" id="cap">
+    <span class="cap-time" id="capTime">--:--</span>
+    <i class="cap-sep"></i>
+    <span class="cap-wx">
+      <span class="ic" id="capWxIc"></span>
+      <b id="capWxT">--°</b>
+    </span>
+    <span class="cap-work" id="capWork" hidden><i></i><b id="capWorkT"></b></span>
+    <span class="cap-note" id="capNote" hidden aria-label="有新通知">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 8.4a5.8 5.8 0 0 1 11.6 0c0 4.8 1.9 5.9 1.9 5.9H4.3s1.9-1.1 1.9-5.9z"/><path d="M10 18.4a2.1 2.1 0 0 0 4 0"/></svg>
+      <b id="capNoteN">1</b>
+    </span>
+    <span class="cap-eq" id="capEq" hidden><i></i><i></i><i></i></span>
+  </div>
+
+  <!-- 展开态：面板。宽度必须与主进程 ISLAND.PANEL_W 一致 -->
+  <div class="panel" id="panel">
+    <div class="p-head">
+      <button class="p-clock" id="pClock" aria-label="打开 Lumen 工作台">
+        <b id="pTime">--:--</b>
+        <span id="pDate">--</span>
+      </button>
+      <div class="p-side">
+        <div class="p-wx" id="pWx" aria-label="点击打开天气工具">
+          <span class="ic big" id="pWxIc"></span>
+          <span class="p-wx-t"><b id="pWxT">--°</b><em id="pWxD">--</em></span>
+        </div>
+        <div class="p-bat" id="pBat" hidden>
+          <span class="bat-shell"><i id="pBatFill"></i></span>
+          <span id="pBatT">--</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-mid">
+      <!-- 系统通知：QQ / 微信 / 邮件等。有通知时顶掉「进行中的工作」空态，
+           最多显示 3 条，其余在列表里滚动 -->
+      <div class="notes" id="notes" hidden>
+        <div class="notes-head">
+          <span>通知</span>
+          <button id="notesClear" aria-label="清除全部通知">全部清除</button>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+      </div>
+
+      <!-- 工作状态：主窗口换视图 / AI 忙碌时实时推过来 -->
+      <div class="work" id="work" hidden>
+        <span class="work-ic" id="workIc"></span>
+        <div class="work-t">
+          <em id="workKicker">正在使用</em>
+          <b id="workName">—</b>
+        </div>
+        <span class="work-sub" id="workSub" hidden></span>
+      </div>
+      <div class="work-none" id="workNone">
+        <span class="empty-ic">◧</span>
+        <div class="empty-t">暂无进行中的工作</div>
+        <div class="empty-s">打开 Lumen 任意工具，这里实时显示</div>
+      </div>
+
+      <!-- 媒体播放器：暂时撤下（SHOW_MEDIA=false），代码留着，恢复只改一个开关 -->
+      <div class="media" id="media" hidden>
+        <div class="art" id="art"><span class="art-ph">♪</span></div>
+        <div class="meta">
+          <div class="mt" id="mTitle">—</div>
+          <div class="ma" id="mArtist">—</div>
+          <div class="mprog" id="mProg"><i id="mFill"></i></div>
+          <div class="mtimes"><span id="mPos">0:00</span><span id="mDur">0:00</span></div>
+          <div class="msrc" id="mSrc" hidden></div>
+        </div>
+      </div>
+
+      <div class="empty" id="empty" hidden>
+        <span class="empty-ic">♪</span>
+        <div class="empty-t">暂无播放中的音乐</div>
+        <div class="empty-s">在任意播放器里播放，岛会自动接管</div>
+      </div>
+    </div>
+
+    <div class="ctrl" id="ctrl" hidden>
+      <button class="cbtn" id="btnPrev" aria-label="上一首">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14M19 5.8v12.4a.8.8 0 0 1-1.2.7l-9.2-6.2a.8.8 0 0 1 0-1.4l9.2-6.2a.8.8 0 0 1 1.2.7z"/></svg>
+      </button>
+      <button class="cbtn main" id="btnPlay" aria-label="播放 / 暂停">
+        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.3v13.4a.9.9 0 0 0 1.4.8l10.2-6.7a.9.9 0 0 0 0-1.6L9.4 4.5A.9.9 0 0 0 8 5.3z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5" width="3.6" height="14" rx="1.4"/><rect x="13.4" y="5" width="3.6" height="14" rx="1.4"/></svg>
+      </button>
+      <button class="cbtn" id="btnNext" aria-label="下一首">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5v14M5 5.8v12.4a.8.8 0 0 0 1.2.7l9.2-6.2a.8.8 0 0 0 0-1.4L6.2 5.1a.8.8 0 0 0-1.2.7z"/></svg>
+      </button>
+    </div>
+
+    <div class="foot">
+      <div class="fc" id="fc"></div>
+    </div>
+  </div>
+
+</div>
+<script src="./island.js"></script>
+</body>
+</html>
