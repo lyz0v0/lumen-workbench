@@ -1,0 +1,629 @@
+/* Lumen 桌面灵动岛 · 样式
+ *
+ * 两条硬约束（来自 _island_spike 实测）：
+ *   1) 窗口尺寸固定，收起 / 展开全靠这里的状态类切换，绝不让主进程改窗口大小；
+ *   2) 收起态整窗鼠标穿透，只有展开态才接收点击。
+ * 宽度 232 / 352 必须与 shell/main.js 的 ISLAND.CAP_W / PANEL_W 一致，
+ * 主进程按这两个数算热区，改这里就要同步那边。
+ *
+ * 透明窗里 backdrop-filter 采不到桌面（窗口外的东西不属于页面），
+ * 所以底色给到 .92~.96 的高不透明度，保证任何壁纸上文字都可读。
+ */
+
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+          "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  /* 出场用带回弹的缓动（末端轻微过冲 4~6%），入场用收得住的 ease-out。
+     透明窗 + 禁用 GPU 也扛得住：只动 opacity / transform，不碰 filter。 */
+  --spring: cubic-bezier(.18, .89, .28, 1.06);
+  --ease-out: cubic-bezier(.22, .72, .2, 1);
+  --exit: cubic-bezier(.42, 0, .68, .2);
+}
+
+html[data-theme="light"] {
+  --glass: rgba(252, 252, 250, .96);
+  --glass-2: rgba(20, 20, 18, .045);
+  --bord: rgba(20, 20, 18, .09);
+  --bord-2: rgba(20, 20, 18, .06);
+  --text: #161615;
+  --sub: #6E6E68;
+  --sub2: #9C9C96;
+  --track: rgba(20, 20, 18, .10);
+  --solid: #161615;
+  --on-solid: #FFFFFF;
+  --shadow: 0 18px 48px rgba(18, 18, 16, .18), 0 3px 10px rgba(18, 18, 16, .08);
+  --cap-shadow: 0 8px 26px rgba(18, 18, 16, .16), 0 1px 3px rgba(18, 18, 16, .06);
+  --hi: rgba(255, 255, 255, .9);
+}
+
+html[data-theme="dark"] {
+  --glass: rgba(26, 26, 25, .94);
+  --glass-2: rgba(255, 255, 255, .06);
+  --bord: rgba(255, 255, 255, .11);
+  --bord-2: rgba(255, 255, 255, .07);
+  --text: #F2F2EF;
+  --sub: #A8A8A1;
+  --sub2: #7A7A74;
+  --track: rgba(255, 255, 255, .14);
+  --solid: #F2F2EF;
+  --on-solid: #121211;
+  --shadow: 0 18px 48px rgba(0, 0, 0, .55), 0 3px 10px rgba(0, 0, 0, .35);
+  --cap-shadow: 0 8px 26px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .3);
+  --hi: rgba(255, 255, 255, .08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* 这里的元素大量用 display:flex，UA 的 [hidden]{display:none} 会被压掉 —— 必须兜底 */
+[hidden] { display: none !important; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+#island { position: relative; width: 100%; height: 100%; transition: opacity .1s linear; }
+
+/* 首帧遮罩：页面还在量胶囊宽度、字体未落定时，先整屏空着，
+   量好之后 island.js 摘掉 data-boot 并播登场动画 —— 避免「半个岛闪一下再变宽」。 */
+body[data-boot="1"] #island { opacity: 0; }
+body[data-boot="0"] #island { opacity: 1; }
+
+/* 登场 / 从全屏隐藏里回来：从上方落下来，末端轻微过冲再停住。
+   只挂 .enter 类，animationend 就摘掉，免得 animation-fill 把 expanded 态的
+   transform / opacity 焊死。 */
+.cap.enter { animation: capIn .58s var(--spring) both; }
+@keyframes capIn {
+  0%   { opacity: 0; transform: translateY(-16px) scale(.84); }
+  55%  { opacity: 1; transform: translateY(1.5px) scale(1.035); }
+  78%  { transform: translateY(-.5px) scale(.995); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* ---------- 收起态胶囊 ---------- */
+/* 宽度由内容决定（岛仔的做法：Layout 逐项累加），JS 量完回填 margin-left 居中，
+   并把宽度报给主进程当热区；这里的 232 只是首帧兜底。 */
+.cap {
+  position: absolute; top: 6px; left: 50%;
+  width: auto; min-width: 96px; height: 44px; margin-left: -116px;
+  display: flex; align-items: center; gap: 9px;
+  padding: 0 14px;
+  border-radius: 22px;
+  background: var(--glass);
+  border: 1px solid var(--bord);
+  box-shadow: var(--cap-shadow);
+  /* 收起（从展开态回来）用带回弹的 spring；展开时在下面被更快的出场曲线覆盖。
+     height / 圆角 / 内边距也一起过渡，智能隐藏切细线才是「收」而不是「跳」。 */
+  transition:
+    opacity .2s var(--ease) .06s,
+    transform .34s var(--spring) .04s,
+    height .26s var(--ease), margin-left .26s var(--ease),
+    padding .26s var(--ease), border-radius .26s var(--ease),
+    box-shadow .26s var(--ease);
+  will-change: opacity, transform;
+}
+.cap > * { transition: opacity .12s var(--ease); }
+
+/* 智能隐藏：被前台窗口遮住时收成一根细线（岛仔 BAR_W_MIN × BAR_H_MIN = 44 × 4.5） */
+body[data-min="1"] .cap {
+  min-width: 0; width: 56px; height: 5px;
+  margin-left: -28px; padding: 0; gap: 0;
+  border-radius: 3px; overflow: hidden;
+}
+body[data-min="1"] .cap > * { opacity: 0; pointer-events: none; }
+body[data-min="1"] .panel { opacity: 0 !important; pointer-events: none !important; }
+body[data-min="1"] .cap::after { opacity: 0; }
+.cap::after {
+  /* 顶部高光，让胶囊不像一块纯色板 */
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 50%;
+  border-radius: 22px 22px 0 0;
+  background: linear-gradient(var(--hi), transparent);
+  opacity: .55; pointer-events: none;
+}
+
+.cap-time {
+  font-size: 15px; font-weight: 650; letter-spacing: .2px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cap-sep { width: 1px; height: 15px; background: var(--bord); flex: 0 0 auto; }
+.cap-wx { display: flex; align-items: center; gap: 4px; color: var(--sub); }
+.cap-wx b {
+  font-size: 13.5px; font-weight: 600; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 工作状态小徽标：绿点 + 名称（长名截断，别把胶囊撑成一条横幅） */
+.cap-work { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.cap-work i {
+  width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto;
+  background: #2fa356;
+  box-shadow: 0 0 6px rgba(47, 163, 86, .5);
+}
+.cap-work.live i { animation: workPulse 1.6s ease-in-out infinite; }
+@keyframes workPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .45; transform: scale(.8); }
+}
+.cap-work b {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  max-width: 118px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 状态切换微动效（类由 island.js 播完摘掉）：
+   pop  = 徽标从无到有登场，弹出带回弹；
+   swap = 已在显示时换名，上浮淡入（同面板状态卡的 mediaSwap 手感）；
+   bye  = 收到 idle 退场，先淡出上收再真隐藏，避免「啪」地消失。 */
+.cap-work.pop  { animation: capWorkPop .42s var(--spring); }
+.cap-work.swap { animation: capWorkSwap .34s var(--ease-out); }
+.cap-work.bye  { animation: capWorkBye .16s var(--exit) forwards; }
+@keyframes capWorkPop {
+  0%   { opacity: 0; transform: translateY(3px) scale(.55); }
+  62%  { opacity: 1; transform: scale(1.07); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes capWorkSwap {
+  0%   { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes capWorkBye {
+  to { opacity: 0; transform: translateY(-5px) scale(.92); }
+}
+/* 换名 / 登场时绿点跟着闪一下放大（任务态自带脉冲，不叠加） */
+.cap-work.pop:not(.live) i, .cap-work.swap:not(.live) i { animation: workFlash .55s var(--ease-out); }
+@keyframes workFlash {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.9); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.ic { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; }
+.ic.big { width: 17px; height: 17px; }
+.ic svg, .ic use { width: 100%; height: 100%; display: block; }
+.ic svg path, .ic svg circle, .ic svg line, .ic svg g {
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* 播放中的跳动条 */
+.cap-eq { display: flex; align-items: flex-end; gap: 2.5px; height: 12px; margin-left: auto; }
+.cap-eq i {
+  display: block; width: 2.5px; height: 5px; border-radius: 2px;
+  background: var(--text); opacity: .75;
+  animation: eq .9s ease-in-out infinite;
+}
+.cap-eq i:nth-child(2) { animation-delay: .18s; }
+.cap-eq i:nth-child(3) { animation-delay: .36s; }
+@keyframes eq { 0%, 100% { height: 4px; } 45% { height: 12px; } }
+
+/* ---------- 展开态面板 ---------- */
+.panel {
+  position: absolute; top: 6px; left: 50%;
+  width: 352px; margin-left: -176px;
+  padding: 11px 12px 9px;
+  border-radius: 19px;
+  background: var(--glass);
+  border: 1px solid var(--bord);
+  box-shadow: var(--shadow);
+  opacity: 0; pointer-events: none;
+  transform: translateY(-10px) scale(.93);
+  transform-origin: 50% 0;
+  /* 收起：短、快、带点下落感；展开在下面覆盖成带回弹的 spring */
+  transition: opacity .15s var(--exit), transform .22s var(--exit);
+  will-change: opacity, transform;
+}
+body[data-state="expanded"] .cap {
+  opacity: 0; pointer-events: none;
+  transform: translateY(-10px) scale(.86);
+  transition: opacity .12s var(--exit), transform .2s var(--exit);
+}
+body[data-state="expanded"] .panel {
+  opacity: 1; pointer-events: auto;
+  transform: none; cursor: grab;
+  transition: opacity .18s var(--ease), transform .36s var(--spring);
+}
+
+/* 内容错峰：展开时自上而下依次浮现（头 → 媒体 → 按钮 → 预报），
+   收起时全部立即淡出、不排队 —— 关掉的东西不该还慢半拍。 */
+.p-head, .p-mid, .ctrl, .foot {
+  opacity: 0; transform: translateY(5px);
+  transition: opacity .12s var(--exit), transform .15s var(--exit);
+}
+body[data-state="expanded"] .p-head {
+  opacity: 1; transform: none;
+  transition: opacity .18s var(--ease) .05s, transform .26s var(--spring) .05s;
+}
+body[data-state="expanded"] .p-mid {
+  opacity: 1; transform: none;
+  transition: opacity .18s var(--ease) .09s, transform .28s var(--spring) .09s;
+}
+body[data-state="expanded"] .ctrl {
+  opacity: 1; transform: none;
+  transition: opacity .18s var(--ease) .13s, transform .28s var(--spring) .13s;
+}
+body[data-state="expanded"] .foot {
+  opacity: 1; transform: none;
+  transition: opacity .18s var(--ease) .17s, transform .3s var(--spring) .17s;
+}
+/* 控件要盖住面板的 grab，否则按钮上也显示「可拖」 */
+body[data-state="expanded"] .panel .cbtn,
+body[data-state="expanded"] .panel .p-wx { cursor: pointer; }
+
+/* 拖动 / 拿起（岛仔同款）：
+   原地按住即「提起」（沿停靠边 +8%、厚度方向 +14%，欠阻尼回弹）；
+   进入拖动后胶囊的形变由 JS 逐帧写 --sx / --sy（果冻拉伸），不再走 transition。 */
+body[data-drag="1"] .panel { opacity: 0 !important; pointer-events: none !important; transform: translateY(-6px) scale(.96) !important; }
+body[data-hold="1"] .cap {
+  opacity: 1 !important; pointer-events: none;
+  transform: scale(var(--sx, 1), var(--sy, 1)) !important;
+  box-shadow: var(--shadow);
+  transition: transform .26s var(--spring), box-shadow .26s var(--ease);
+}
+body[data-drag="1"] .cap {
+  opacity: 1 !important; pointer-events: none;
+  transform: scale(var(--sx, 1), var(--sy, 1)) !important;
+  box-shadow: var(--shadow);
+  transition: box-shadow .26s var(--ease);
+}
+/* 拖动时指针停在原处（窗口跟着走），光标样式跟着 body 的抓取态 */
+body[data-drag="1"], body[data-drag="1"] * { cursor: grabbing !important; }
+
+/* ---------- 拖中吸附引导（岛仔 center rim） ----------
+   颜色即状态：接近居中时先浮出淡白描边，吸住瞬间整圈转绿、一道亮光从中心
+   沿胶囊向两端扫开；停在中间期间绿边以 1.6s 周期缓慢呼吸。 */
+.cap { --sweep-dir: 90deg; }
+body[data-dock="left"] .cap, body[data-dock="right"] .cap { --sweep-dir: 180deg; }
+.cap[data-locked="1"] {
+  box-shadow: 0 0 0 1.6px rgba(88, 222, 140, .9), 0 0 16px rgba(88, 222, 140, .45), var(--cap-shadow);
+  animation: lockBreathe 1.6s ease-in-out infinite;
+}
+@keyframes lockBreathe {
+  0%, 100% { box-shadow: 0 0 0 1.6px rgba(88, 222, 140, .95), 0 0 20px rgba(88, 222, 140, .5), var(--cap-shadow); }
+  50%      { box-shadow: 0 0 0 1.3px rgba(88, 222, 140, .55), 0 0 9px rgba(88, 222, 140, .22), var(--cap-shadow); }
+}
+.cap.sweep::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit;
+  background-image: linear-gradient(var(--sweep-dir), transparent, rgba(140, 240, 175, .85), transparent);
+  background-repeat: no-repeat; background-position: center; background-size: 0% 100%;
+  animation: lockSweep .55s var(--ease-out) forwards;
+  pointer-events: none;
+}
+@keyframes lockSweep {
+  0%   { background-size: 0% 100%; opacity: 1; }
+  60%  { background-size: 130% 100%; opacity: .8; }
+  100% { background-size: 160% 100%; opacity: 0; }
+}
+/* 吸住瞬间「轻轻一沉」：像卡进了槽位（岛仔 drag_lift 反冲） */
+.cap.lockin { animation: capSink .3s var(--ease-out); }
+body[data-dock="left"] .cap.lockin, body[data-dock="right"] .cap.lockin { animation: capSinkSide .3s var(--ease-out); }
+@keyframes capSink {
+  0%   { transform: translateY(-1.5px) scale(var(--sx, 1), var(--sy, 1)); }
+  45%  { transform: translateY(2.2px) scale(var(--sx, 1), var(--sy, 1)); }
+  100% { transform: translateY(0) scale(var(--sx, 1), var(--sy, 1)); }
+}
+@keyframes capSinkSide {
+  0%   { transform: translateX(-1.5px) scale(var(--sx, 1), var(--sy, 1)); }
+  45%  { transform: translateX(2.2px) scale(var(--sx, 1), var(--sy, 1)); }
+  100% { transform: translateX(0) scale(var(--sx, 1), var(--sy, 1)); }
+}
+
+.p-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+
+.p-clock {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  background: none; border: 0; padding: 0; color: var(--text);
+  font-family: inherit; text-align: left; cursor: grab;
+  position: relative;
+}
+/* 拖动把手：悬停 0.4s 后浮出一条短杠，提示「这里能拖」（岛仔也是悬停才显示） */
+.p-clock::after {
+  content: ""; position: absolute; left: 50%; bottom: -5px;
+  width: 18px; height: 2.5px; margin-left: -9px; border-radius: 2px;
+  background: var(--text); opacity: 0;
+  transition: opacity .2s var(--ease), width .2s var(--ease);
+}
+.p-clock:hover::after { opacity: .18; width: 22px; transition-delay: .35s; }
+body[data-drag="1"] .p-clock { cursor: grabbing; }
+body[data-drag="1"] .p-clock::after { opacity: .45; width: 26px; transition-delay: 0s; }
+.p-clock b {
+  font-size: 21px; font-weight: 660; letter-spacing: -.4px; line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+}
+.p-clock span { font-size: 10.5px; color: var(--sub); }
+.p-clock:hover b { opacity: .72; }
+
+.p-side { display: flex; align-items: center; gap: 8px; }
+.p-wx {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px 4px 7px; border-radius: 10px;
+  background: var(--glass-2); cursor: pointer;
+}
+.p-wx:hover { background: var(--track); }
+.p-wx-t { display: flex; flex-direction: column; line-height: 1.1; }
+.p-wx-t b { font-size: 12.5px; font-weight: 640; font-variant-numeric: tabular-nums; }
+.p-wx-t em { font-style: normal; font-size: 9.5px; color: var(--sub); }
+
+.p-bat { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.bat-shell {
+  position: relative; width: 20px; height: 10px; border-radius: 3px;
+  border: 1px solid var(--bord); display: block; overflow: hidden;
+}
+.bat-shell::after {
+  content: ""; position: absolute; right: -3px; top: 2.5px; width: 2px; height: 4px;
+  border-radius: 0 1px 1px 0; background: var(--bord);
+}
+.bat-shell i { display: block; height: 100%; width: 0; background: var(--text); opacity: .7; transition: width .3s; }
+
+.p-mid { margin-top: 9px; min-height: 58px; }
+
+.media { display: flex; align-items: center; gap: 11px; }
+/* 切歌：换封面 / 换标题时轻轻上浮淡入，比直接改写文字自然 */
+.media[data-swap="1"] { animation: mediaSwap .36s var(--ease-out); }
+@keyframes mediaSwap {
+  0%   { opacity: 0; transform: translateY(6px) scale(.985); }
+  100% { opacity: 1; transform: none; }
+}
+.art {
+  position: relative; width: 58px; height: 58px; flex: 0 0 auto;
+  border-radius: 12px; overflow: hidden;
+  background: var(--glass-2);
+  border: 1px solid var(--bord-2);
+  display: flex; align-items: center; justify-content: center;
+}
+.art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.art.ph::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(140deg, var(--art-a, #4A7CC7), var(--art-b, #C9568F));
+  opacity: .9;
+}
+.art-ph {
+  position: relative; z-index: 1; font-size: 21px; color: #fff; opacity: .92;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .25);
+}
+
+.meta { flex: 1 1 auto; min-width: 0; }
+.mt {
+  font-size: 13px; font-weight: 640; letter-spacing: -.1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ma {
+  font-size: 10.5px; color: var(--sub); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mprog {
+  height: 3px; border-radius: 2px; background: var(--track);
+  margin-top: 8px; overflow: hidden;
+}
+.mprog i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--text); opacity: .8; }
+.mprog.hide { visibility: hidden; }
+.mtimes {
+  display: flex; justify-content: space-between; margin-top: 3px;
+  font-size: 9.5px; color: var(--sub2); font-variant-numeric: tabular-nums;
+}
+.mtimes.hide { visibility: hidden; }
+/* 有些播放器（酷狗等）不向系统上报时间轴，进度条只能藏起来；
+   这时用这一行填上「来源」，避免媒体卡下半截空一块 */
+.msrc {
+  margin-top: 7px; font-size: 10px; color: var(--sub2);
+  display: flex; align-items: center; gap: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.msrc::before {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--text); opacity: .45; flex: 0 0 auto;
+}
+
+.empty {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  height: 58px; gap: 1px; text-align: center;
+}
+.empty-ic { font-size: 18px; color: var(--sub2); line-height: 1; }
+.empty-t { font-size: 11.5px; color: var(--sub); }
+.empty-s { font-size: 9.5px; color: var(--sub2); }
+
+/* ---------- 工作状态卡（主窗口换视图 / AI 忙碌时实时推过来） ---------- */
+.work { display: flex; align-items: center; gap: 10px; min-height: 58px; }
+.work[data-swap="1"] { animation: mediaSwap .32s var(--ease-out); }
+.work-ic {
+  width: 36px; height: 36px; flex: 0 0 auto;
+  border-radius: 11px; background: var(--glass-2); border: 1px solid var(--bord-2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text);
+}
+.work-ic svg { width: 17px; height: 17px; display: block; }
+.work-ic svg path, .work-ic svg rect, .work-ic svg circle, .work-ic svg line {
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.work-ic.task svg { fill: currentColor; stroke: none; }
+.work-t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.work-t em { font-style: normal; font-size: 9.5px; color: var(--sub2); }
+.work-t b {
+  font-size: 13.5px; font-weight: 640; letter-spacing: -.1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.work-sub {
+  flex: 0 0 auto; font-size: 9.5px; color: var(--sub);
+  max-width: 92px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.work-none {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 58px; gap: 1px; text-align: center;
+}
+
+/* ---------- 系统通知 ----------
+   胶囊末尾的未读小铃铛（数字），面板里的通知列表。通知到达时红点 pop 一下；
+   展开面板即视为已读，红点消失但列表保留，直到点「全部清除」。 */
+.cap-note { display: inline-flex; align-items: center; gap: 3px; color: #cf4b45; }
+.cap-note svg {
+  width: 14px; height: 14px; display: block;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.cap-note b { font-size: 11px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.cap-note.pop { animation: capWorkPop .42s var(--spring); }
+html[data-theme="dark"] .cap-note { color: #ff827a; }
+
+.notes { margin-bottom: 9px; }
+.notes-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 9.5px; color: var(--sub2); margin-bottom: 5px;
+}
+.notes-head button {
+  border: 0; background: transparent; color: var(--sub2);
+  font-size: 9.5px; cursor: pointer; padding: 2px 5px; border-radius: 6px;
+}
+.notes-head button:hover { background: var(--glass-2); color: var(--text); }
+.notes-list {
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 118px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--bord) transparent;
+}
+/* 同时有工作状态时给状态卡让位：通知只留一条半，超出的滚动看 */
+.p-mid[data-compact="1"] .notes-list { max-height: 84px; }
+.p-mid[data-compact="1"] .notes { margin-bottom: 6px; }
+.note {
+  display: flex; gap: 8px; padding: 6px 8px;
+  border-radius: 10px; background: var(--glass-2); border: 1px solid var(--bord-2);
+}
+.note-app {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px;
+  background: var(--track); color: var(--text);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.note-t { flex: 1 1 auto; min-width: 0; line-height: 1.25; }
+.note-top { display: flex; align-items: center; gap: 6px; }
+.note-appname {
+  font-size: 10px; color: var(--sub);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.note-time {
+  margin-left: auto; flex: 0 0 auto;
+  font-size: 9px; color: var(--sub2); font-variant-numeric: tabular-nums;
+}
+.note-title {
+  font-size: 12px; font-weight: 620; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.note-body {
+  font-size: 10px; color: var(--sub); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.note.new { animation: mediaSwap .34s var(--ease-out); }
+
+.ctrl { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; }
+.ctrl[hidden] { display: none; }
+.cbtn {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--glass-2); border: 1px solid var(--bord-2);
+  color: var(--text); cursor: pointer; padding: 0;
+  transition: background .15s, transform .12s;
+}
+.cbtn svg { width: 13px; height: 13px; fill: currentColor; }
+.cbtn:hover { background: var(--track); }
+.cbtn:active { transform: scale(.92); }
+.cbtn.main {
+  width: 36px; height: 36px;
+  background: var(--solid); border-color: transparent; color: var(--on-solid);
+}
+.cbtn.main:hover { background: var(--solid); opacity: .88; }
+.cbtn.main svg { width: 15px; height: 15px; }
+.cbtn .i-pause { display: none; }
+.cbtn.playing .i-play { display: none; }
+.cbtn.playing .i-pause { display: block; }
+.cbtn:disabled { opacity: .35; cursor: default; }
+
+.foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--bord-2); }
+.fc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.fc-day {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 2px 0 0; border-radius: 9px;
+}
+.fc-day .d { font-size: 9.5px; color: var(--sub2); }
+.fc-day .t { font-size: 10px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.fc-day .t b { color: var(--text); font-weight: 600; }
+.fc-day .ic { width: 13px; height: 13px; color: var(--sub); }
+.fc.none { display: block; text-align: center; font-size: 10px; color: var(--sub2); padding: 4px 0 2px; }
+
+/* ---------- 左右停靠 ----------
+   窗口贴屏幕左 / 右边缘：胶囊变竖排（时 / 分两行 + 天气 + 工作点），竖直居中；
+   展开面板从边缘向屏幕内滑出，内容与顶部停靠完全一致。竖排尺寸由 JS 量完
+   回填 margin-top 居中，并把长度报给主进程当热区。 */
+body[data-dock="left"] .cap, body[data-dock="right"] .cap {
+  top: 50%; left: 50%; margin-left: 0;
+  flex-direction: column; gap: 7px;
+  width: 44px; min-width: 44px; height: auto;
+  padding: 12px 0; border-radius: 22px;
+}
+body[data-dock="left"] .cap { left: 0; }
+body[data-dock="right"] .cap { left: auto; right: 0; }
+body[data-dock="left"] .cap-time, body[data-dock="right"] .cap-time {
+  white-space: pre-line; text-align: center;
+  font-size: 12.5px; line-height: 1.3; letter-spacing: 0;
+}
+body[data-dock="left"] .cap-sep, body[data-dock="right"] .cap-sep { width: 15px; height: 1px; }
+body[data-dock="left"] .cap-wx, body[data-dock="right"] .cap-wx { flex-direction: column; gap: 3px; }
+body[data-dock="left"] .cap-wx b, body[data-dock="right"] .cap-wx b { font-size: 11.5px; }
+body[data-dock="left"] .cap-work, body[data-dock="right"] .cap-work { flex-direction: column; gap: 3px; min-height: 0; }
+body[data-dock="left"] .cap-note, body[data-dock="right"] .cap-note { flex-direction: column; gap: 2px; }
+body[data-dock="left"] .cap-work b, body[data-dock="right"] .cap-work b { display: none; }
+/* 面板从停靠边滑出：锚点与 transform-origin 换到靠边一侧 */
+body[data-dock="left"] .panel, body[data-dock="right"] .panel {
+  top: 50%; margin-left: 0; margin-top: -94px;
+}
+body[data-dock="left"] .panel { left: 54px; transform-origin: 0 50%; }
+body[data-dock="right"] .panel { left: auto; right: 54px; transform-origin: 100% 50%; }
+/* 收起位移方向跟着停靠边走（限定 collapsed，别盖过展开态的 transform:none） */
+body[data-state="collapsed"][data-dock="left"] .panel { transform: translateX(-10px) scale(.93); }
+body[data-state="collapsed"][data-dock="right"] .panel { transform: translateX(10px) scale(.93); }
+body[data-state="expanded"][data-dock="left"] .cap { transform: translateX(-10px) scale(.86); }
+body[data-state="expanded"][data-dock="right"] .cap { transform: translateX(10px) scale(.86); }
+/* 登场 / 回归动画：从停靠边滑入 */
+body[data-dock="left"] .cap.enter { animation: capInLeft .58s var(--spring) both; }
+body[data-dock="right"] .cap.enter { animation: capInRight .58s var(--spring) both; }
+@keyframes capInLeft {
+  0%   { opacity: 0; transform: translateX(-16px) scale(.84); }
+  55%  { opacity: 1; transform: translateX(1.5px) scale(1.035); }
+  78%  { transform: translateX(-.5px) scale(.995); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes capInRight {
+  0%   { opacity: 0; transform: translateX(16px) scale(.84); }
+  55%  { opacity: 1; transform: translateX(-1.5px) scale(1.035); }
+  78%  { transform: translateX(.5px) scale(.995); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* ---------- 智能隐藏的细线态 ----------
+   width 从内容宽（auto）到 56px 无法插值，这一下必然跳；用「内容先淡出 + 高度/圆角/内边距
+   同时收」把它盖过去，观感是从胶囊挤成一根线，而不是整块消失再蹦出一条线。
+   回来时反向展开，高度先长、内容后浮，看起来是「岛从线里长回来」。
+   左右停靠的细线是贴边的一小段竖线（宽 5 × 高 56）。 */
+body[data-min="1"] .cap { box-shadow: 0 2px 8px rgba(0, 0, 0, .18); }
+body[data-min="0"] .cap > * { opacity: 1; transition-delay: .08s; }
+body[data-min="1"][data-dock="left"] .cap,
+body[data-min="1"][data-dock="right"] .cap {
+  width: 5px; min-width: 0; height: 56px;
+  margin-left: 0; margin-top: -28px; padding: 0; gap: 0;
+  border-radius: 3px; overflow: hidden;
+}
+
+/* ---------- 无障碍 ----------
+   系统开了「减少动效」就全部瞬变，只保留播放中那组跳动的电平条（它是状态指示，不是装饰）。 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0s !important;
+  }
+  .cap-eq i { animation-duration: .9s !important; animation-iteration-count: infinite !important; }
+}
