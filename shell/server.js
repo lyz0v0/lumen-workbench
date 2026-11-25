@@ -112,8 +112,10 @@ async function handleNet(req, res, urlObj, doFetch) {
     } catch (e) {}
   }
   if (!/^https?:\/\//i.test(target)) return sendJSON(res, 400, { ok: false, status: 0, error: '只允许 http/https 请求' });
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 12000);    /* 与壳内 IPC 同款：挂死的服务端别拖住响应 */
   try {
-    const r = await doFetch(target, { headers: { 'User-Agent': 'Mozilla/5.0 (Lumen Workbench)' } });
+    const r = await doFetch(target, { headers: { 'User-Agent': 'Mozilla/5.0 (Lumen Workbench)' }, signal: ctl.signal });
     const text = await r.text();
     const headers = {};
     for (const k of ['ratelimit', 'retry-after', 'x-ratelimit-remaining']) {
@@ -122,7 +124,9 @@ async function handleNet(req, res, urlObj, doFetch) {
     }
     sendJSON(res, 200, { ok: r.ok, status: r.status, text, headers });
   } catch (e) {
-    sendJSON(res, 200, { ok: false, status: 0, error: String((e && e.message) || e) });
+    sendJSON(res, 200, { ok: false, status: 0, error: String((e && e.message) || e), timeout: ctl.signal.aborted });
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -216,12 +220,25 @@ function createServer(opts) {
   const version = opts.version || '';
   const doFetch = opts.fetchImpl || globalThis.fetch;
 
+  /* 灵动岛页面：跟主界面同源（同 localStorage / 同主题），但文件住在 shell/ 里，
+   * 不在产物目录 —— 单独放行这三个，其余 /__lumen/* 仍要中继头。 */
+  const ISLAND_STATIC = {
+    '/__lumen/island': 'island.html',
+    '/__lumen/island.html': 'island.html',
+    '/__lumen/island.css': 'island.css',
+    '/__lumen/island.js': 'island.js'
+  };
+
   const server = http.createServer(async (req, res) => {
     let urlObj;
     try { urlObj = new URL(req.url, 'http://' + (req.headers.host || HOST)); }
     catch (e) { return sendJSON(res, 400, { ok: false, error: 'bad url' }); }
 
     const p = urlObj.pathname;
+
+    if (Object.prototype.hasOwnProperty.call(ISLAND_STATIC, p)) {
+      return serveStatic(res, __dirname, '/' + ISLAND_STATIC[p]);
+    }
 
     if (p.startsWith('/__lumen/')) {
       if (!relayAllowed(req)) return sendJSON(res, 403, { ok: false, error: 'relay forbidden' });
