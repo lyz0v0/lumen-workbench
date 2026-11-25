@@ -3,7 +3,7 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://lyz0v0.github.io/lumen-workbench/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -11,8 +11,8 @@
       <image:title>Lumen 工作台主界面</image:title>
     </image:image>
     <image:image>
-      <image:loc>https://lyz0v0.github.io/lumen-workbench/assets/shot-imgtools.png</image:loc>
-      <image:title>在线体验：图片工具</image:title>
+      <image:loc>https://lyz0v0.github.io/lumen-workbench/assets/shot-island.png</image:loc>
+      <image:title>桌面灵动岛 · 通知面板</image:title>
     </image:image>
   </url>
 </urlset>
