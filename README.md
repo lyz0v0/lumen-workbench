@@ -1,32 +1,26 @@
 # Lumen Workbench
 
-![release](https://img.shields.io/github/v/release/lyz0v0/lumen-workbench)![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?logo=node.js)![platform](https://img.shields.io/badge/platform-Windows%2010%2B-blue?logo=windows)![license](https://img.shields.io/badge/license-ARR--Custom-orange)
+![release](https://img.shields.io/github/v/release/lyz0v0/lumen-workbench)![platform](https://img.shields.io/badge/platform-Windows%2010%2B-blue?logo=windows)![license](https://img.shields.io/badge/license-ARR--Custom-orange)
 
 English | [中文](./README.zh-CN.md)
 
-A local-first personal AI workbench. The entire app is just three files (`index.html` + `app.js` + `style.css`) — double-click `Lumen.html` in your browser and it works. You can also run it as a desktop window with the bundled Electron shell, or install the Windows installer directly.
+A local-first personal AI workbench for Windows. One installer, no dependencies, no account — install and go.
 
-> Current version **v1.1.0** | 54 tools, all implemented
+> Current version **v1.2.0** | 54 tools, all implemented
 
-**Website & live demo**: [lyz0v0.github.io/lumen-workbench](https://lyz0v0.github.io/lumen-workbench/) — try all 10 image tools in the browser, download the Windows build for everything else. Faster mirror in mainland China: [workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL).
+**Website**: [lyz0v0.github.io/lumen-workbench](https://lyz0v0.github.io/lumen-workbench/) — project introduction, feature overview and download links. Faster mirror in mainland China: [workbuddy.host](https://lumen-workbench.app.workbuddy.host/?sharecode=Z2WMEPTYQL).
 
 ![Main screen](docs/screenshot-main.jpg)
 
 ## Highlights
 
 - **Local-first**: image processing, PDF, QR code and text tools all run on your machine — files never leave your computer
-- **Lightweight, zero dependencies**: three files are all it takes; no framework, no backend, no sign-up
-- **No account required**: AI features use BYOK (bring your own API key; requests are relayed by the shell's main process, keys never leave your machine)
-- **Data stays local**: history, AI settings and price notes all live in your local browser storage; uninstall to wipe
+- **One installer, zero dependencies**: Electron + Chromium bundled — install and go, no Java / Python / .NET / Node needed
+- **Desktop island**: a capsule that lives on your desktop — clock / weather / battery / media player, physics-based dragging, dock to any screen edge, and system notifications from apps like QQ & WeChat mirrored onto the island
+- **No account required**: AI features use BYOK (bring your own API key; requests are relayed by the app's main process, keys never leave your machine)
+- **Data stays local**: history and AI settings live in your local user data; uninstall to wipe
 - **Multi-language**: the interface supports 简体中文 / English / 日本語 — auto-detected on first launch, switchable anytime in Settings
-- **Optional desktop shell**: `shell/` is a lightweight Electron shell that does nine things — opens a window (over a local port, same origin as the browser),
-  **local port service** (starts `http://127.0.0.1:17870` on launch; opening that address in a browser shows the very same workbench; if the port is taken it identifies the occupier first, then falls back to the next free port),
-  hands external links to the system browser, relays network requests (bypassing CORS — the official hot-list source and AI chat both go through this channel; on the browser side the same-origin relays `/__lumen/net` and `/__lumen/chat` handle it),
-  screen recording (lists screen/window sources, captures system audio, saves straight to disk — see `shell/rec.js`),
-  minimizes to tray on close (the port service keeps running; the tray menu offers show window / open in browser / copy address / shell status / restart port / quit — reopening the shell recalls the window and restarts the port service),
-  local capabilities a web page cannot have (**clipboard history** — text, images and copied file paths are captured in the background even when the window is unfocused; and **system info** — CPU model, physical core count, real memory, graphics card and per-display parameters),
-  a **shell status page** (`shell/status.html`: run mode, port, port-conflict diagnostics, recent logs; loaded from a local file, so it opens even if the port service is down), and a **Python runtime** (detects the local Python interpreter, feeds it the bundled scripts from `src/py/` and hands the rendered images back — pixel avatars and other heavy lifting run on it; absent in the browser-only version).
-  To force the legacy `file://` mode set the env var `LUMEN_MODE=file`; the port can be changed with `LUMEN_PORT`. For development use `npm run dev`, which runs on port 17871 with an isolated data directory.
+- **In-app auto-update**: "Check for updates" downloads and upgrades in one click; your data is kept
 - **Automatic fallback for free APIs**: weather / exchange rates / hot lists / parcel tracking all have backup sources or multi-level fallbacks — one failing never breaks the rest
 
 ## Home screen
@@ -37,67 +31,38 @@ A local-first personal AI workbench. The entire app is just three files (`index.
 - **Local music**: drag songs from a folder in and use them as work BGM — played purely locally
 - **Search suggestions**: typing matches tools instantly; ↑↓ to pick, Enter to open
 - **Frequent tools**: auto-sorted by recent use; right-click to pin favorites
-- **Startup self-check**: on launch, checks the local environment (storage / canvas / export / clipboard / WASM / network, 7 items) and external API health; issues light up in the sidebar with details, never blocking use
-- **Check for updates**: compares the latest version across multiple sources concurrently (raw / jsDelivr / GitHub API / Gitee — any one reachable is enough); the dialog shows a "current ⟶ latest" comparison with update instructions and a one-click jump to download
-- **About**: one-line intro + stats dashboard (tools / implemented / categories) + quick start & shortcuts + sponsor link
+- **Startup self-check**: on launch, checks the local environment and external API health; issues light up in the sidebar with details, never blocking use
 
 ## Tools
 
-**54 tools across 7 categories, all fully implemented — no placeholders.** As of 1.0, the e-commerce category and Accio Work content have been retired to focus on a local-first toolbox.
+**54 tools across 7 categories, all fully implemented — no placeholders.**
 
 - **Images**: format conversion, compression, watermark, crop & resize, images to PDF
 - **PDF**: merge, split, page editing, watermark, paging seal, compress, to images, extract text
-- **AI workbench** (sidebar entry, "AI Assistant"): the assistant calls local tools right in the chat, and "use tools" mode auto-continues past the step limit to finish multi-step tasks in one run; also a prompt optimizer (two-mode rewrite / iterate / score / side-by-side compare, with {{variable}} guarding), image attachments, session management, a prompt library and custom skills (BYOK, multi-model / streaming / local sessions)
+- **AI workbench** (sidebar entry, "AI Assistant"): the assistant calls local tools right in the chat, and "use tools" mode auto-continues past the step limit to finish multi-step tasks in one run; also a prompt optimizer, image attachments, session management, a prompt library and custom skills (BYOK, multi-model / streaming / local sessions)
 - **Dev tools**: UUID generator, timestamp converter, cron builder, API tester, color converter, QR code generator / scanner
 - **Others**: web image extractor, video prompt helper, friend links, and more
 
 See [Releases](https://github.com/lyz0v0/lumen-workbench/releases) for per-version changes.
 
-## Prerequisites
+## Requirements & Install
 
-| How you run it | What you need | Version |
-|---|---|---|
-| Open in browser | None (any modern browser: Chrome / Edge / Firefox, preferably a recent version) | — |
-| One-click start `setup.bat` | [Node.js](https://nodejs.org) (npm ships with Node) | **Node.js 18 or later**, LTS (20 / 22) recommended |
-| Windows installer | None | Windows 10 / 11 (64-bit) |
-
-Notes:
-
-- The one-click start downloads Electron on first run (~90 MB; npmmirror is used automatically inside mainland China), fully offline afterwards
-- The installer bundles all runtimes (Electron + Chromium) — install and go, no Java / Python / .NET needed
-- System requirements: Windows 10 or later (64-bit); the browser mode also works on macOS / Linux
-
-## Run
-
-**Option 1: Browser (simplest)**
-
-Double-click `Lumen.html` — every feature works (`index.html` is the same file under a compatibility name).
-
-**Option 2: One-click start (Electron desktop window)**
-
-Double-click **`setup.bat`** in the repo: the first run installs Electron via npm (npmmirror inside mainland China), then opens the desktop window automatically; every later double-click just starts it. Requires Node.js 18+ (you'll get a clear message if Node is missing or too old).
-
-You can also install and start manually:
-
-```bash
-npm install
-npm start
-```
-
-> The desktop window adds a "main-process relay" channel: the official hot-list source and AI chat (some providers don't send CORS headers) fall back to secondary sources in browser mode, but work directly inside the shell.
-
-**Option 3: Windows installer (recommended)**
+| | |
+|---|---|
+| OS | Windows 10 / 11 (64-bit) |
+| Dependencies | None — all runtimes are bundled |
 
 Download `lumen-workbench-setup.exe` from [Releases · Latest](https://github.com/lyz0v0/lumen-workbench/releases/latest) and double-click to install: step-by-step wizard, choose your own install location, Start Menu shortcut created automatically.
 
-- **In-app auto-update**: when a new version ships, "Check for updates" in the app downloads and upgrades in one click — all your data is kept
 - Closing the window minimizes to the tray; right-click the tray icon to quit or open the shell status page
+
+For development: clone the repo, put the build outputs next to `shell/` and run `npm install && npm start` (Node.js 18+).
 
 ## Notes
 
 - Weather (Open-Meteo), exchange rates (Frankfurter), hot lists and the hitokoto quote on the home screen are free public APIs; they degrade gracefully and never break other features
 - Parcel tracking uses a free aggregated API, 30 requests/day, resets the next day
-- AI tools use BYOK: your own API key, requests go straight from the shell's main process to the provider (browser mode uses direct connection + fallback sources); this repo contains no keys and runs no proxy
+- AI tools use BYOK: your own API key, requests go straight from the app's main process to the provider; this repo contains no keys and runs no proxy
 - PDF, image processing and QR code generation / scanning are purely local — no third-party API involved, files never leave your machine
 
 ## Feedback
