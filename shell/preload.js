@@ -6,6 +6,10 @@
  *   4) lumenShell.*        —— 壳信息（本地端口地址 / 版本 / 状态）与「在浏览器中打开」
  *   5) lumenApp.*          —— 版本信息与应用内更新（只有带 electron-updater 的安装版可用，
  *                             轻量壳里 isInstalled 恒为 false，页面侧据此走「去 GitHub 下载」）
+ *   6) lumenClip.* / lumenSys.* —— 剪贴板历史与系统硬件信息（只有桌面壳有；
+ *                             网页版直开时 window.lumenClip 为 undefined，页面走降级实现）
+ *   7) lumenPy.*            —— 本机 Python 运行时：探测 / 跑自带脚本 / 装白名单依赖
+ *                             （只有桌面壳有；网页版直开时为 undefined，工具页降级）
  * 之所以要代发：部分服务端（如 api.openai.com）不返回 CORS 头，交主进程直连最稳。
  * 另外，首次以本地端口启动时，把旧 file:// 时代存下的本机数据补写过来（见下）。 */
 const { contextBridge, ipcRenderer } = require('electron');
@@ -48,6 +52,10 @@ contextBridge.exposeInMainWorld('lumenNet', {
 
   fetch: url => ipcRenderer.invoke('lumen:net-fetch', String(url || '')),
 
+  /* 通用 HTTP（API 测试工具）：payload { method, url, headers, body }
+   * 返回 { ok, status, statusText, headers, text, ms, error } */
+  http: payload => ipcRenderer.invoke('lumen:http', payload || {}),
+
   /* payload: { id, url, headers, body, stream }
    * onDelta(chunkText) 会被逐块回调；返回 { ok, status, text, sse, error, aborted } */
   chat: (payload, onDelta) => {
@@ -65,6 +73,44 @@ contextBridge.exposeInMainWorld('lumenNet', {
   },
 
   abort: id => ipcRenderer.send('lumen:chat-abort', id)
+});
+
+/* 视频下载（Beta）：探测 / 开始 / 取消 / 定位文件。
+ * 进度走 lumen:dl-progress 事件，页面按 id 过滤。 */
+contextBridge.exposeInMainWorld('lumenDl', {
+  isElectron: true,
+  probe: (payload) => ipcRenderer.invoke('lumen:dl-probe', payload || {}),
+  start: (payload) => ipcRenderer.invoke('lumen:dl-start', payload || {}),
+  cancel: (id) => ipcRenderer.invoke('lumen:dl-cancel', String(id || '')),
+  reveal: (p) => ipcRenderer.invoke('lumen:dl-reveal', String(p || '')),
+  onProgress: (cb) => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d); } catch (_) {} };
+    ipcRenderer.on('lumen:dl-progress', h);
+    return () => ipcRenderer.removeListener('lumen:dl-progress', h);
+  }
+});
+
+/* 站点解析组件（yt-dlp，按需下载，不进安装包） */
+contextBridge.exposeInMainWorld('lumenWeb', {
+  isElectron: true,
+  state: () => ipcRenderer.invoke('lumen:web-state'),
+  install: (target, force) => ipcRenderer.invoke('lumen:web-install', { target: String(target || 'ytdlp'), force: !!force }),
+  formats: (payload) => ipcRenderer.invoke('lumen:web-formats', payload || {}),
+  start: (payload) => ipcRenderer.invoke('lumen:web-start', payload || {}),
+  /* YouTube 人机校验：应用内登录一次，登录态导出成本机 Cookie 文件给解析组件用 */
+  ytLogin: () => ipcRenderer.invoke('lumen:yt-login'),
+  ytCookie: () => ipcRenderer.invoke('lumen:yt-cookie'),
+  /* 网页版已登录时，直接粘贴 Cookie 或导入 cookies.txt，不必在应用里再登一次 */
+  ytCookieSet: (raw) => ipcRenderer.invoke('lumen:yt-cookie-set', { raw: String(raw || '') }),
+  ytCookiePick: () => ipcRenderer.invoke('lumen:yt-cookie-file'),
+  ytCookieClear: () => ipcRenderer.invoke('lumen:yt-cookie-clear'),
+  onProgress: (cb) => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d); } catch (_) {} };
+    ipcRenderer.on('lumen:web-progress', h);
+    return () => ipcRenderer.removeListener('lumen:web-progress', h);
+  }
 });
 
 /* 壳信息：{ mode:'http'|'file', port, url, version } */
@@ -100,6 +146,130 @@ contextBridge.exposeInMainWorld('lumenApp', {
     ipcRenderer.on('lumen:update-status', h);
     return () => ipcRenderer.removeListener('lumen:update-status', h);
   }
+});
+
+/* 剪贴板历史：采集在主进程（窗口失焦时也要记），页面只读列表 + 发指令。
+ * list(): { ok, watch, items:[{id,type:'text'|'files'|'image',ts,text?,files?,thumb?,w?,h?,big?}] }
+ * copy(id) 把某条写回系统剪贴板；del/clear 管理；watch(bool) 暂停 / 继续记录；
+ * refresh() 立刻读一次（用户手动「记录当前剪贴板」）；
+ * onNew(cb) 新条目推过来时回调，返回取消订阅函数。 */
+contextBridge.exposeInMainWorld('lumenClip', {
+  isElectron: true,
+  list: () => ipcRenderer.invoke('lumen:clip-list'),
+  copy: id => ipcRenderer.invoke('lumen:clip-copy', String(id || '')),
+  del: id => ipcRenderer.invoke('lumen:clip-del', String(id || '')),
+  clear: () => ipcRenderer.invoke('lumen:clip-clear'),
+  watch: on => ipcRenderer.invoke('lumen:clip-watch', !!on),
+  refresh: () => ipcRenderer.invoke('lumen:clip-poll'),
+  onNew: cb => {
+    const h = (_e, d) => { try { cb(d); } catch (err) {} };
+    ipcRenderer.on('lumen:clip-new', h);
+    return () => ipcRenderer.removeListener('lumen:clip-new', h);
+  }
+});
+
+/* 系统硬件信息（CPU 型号 / 物理核数 / 内存 / 显卡 / 多屏参数 / 路径…）。
+ * info(): { ok, shell:'desktop', result:{...} }；网页版没有这个桥。 */
+contextBridge.exposeInMainWorld('lumenSys', {
+  isElectron: true,
+  info: () => ipcRenderer.invoke('lumen:sys-info')
+});
+
+/* 桌面灵动岛。
+ * 主窗口的设置面板只用 get / setEnabled；岛页面自己用 onState / onMedia 收推送。
+ * media() 返回的是「最近一次」状态，首屏直接画，不必等下一轮轮询。 */
+contextBridge.exposeInMainWorld('lumenIsland', {
+  isElectron: true,
+  /* { ok, enabled, available, running, media } */
+  get: () => ipcRenderer.invoke('lumen:island-get'),
+  /* { ok, enabled, available, error? } */
+  setEnabled: on => ipcRenderer.invoke('lumen:island-set', !!on),
+  media: () => ipcRenderer.invoke('lumen:island-media-get'),
+  cmd: (action, pos) => ipcRenderer.invoke('lumen:island-cmd', String(action || 'toggle'), Number(pos) || 0),
+  openMain: () => ipcRenderer.invoke('lumen:island-open-main'),
+  /* 系统通知（QQ / 微信 / 邮件…）：读 Windows 通知库，列表新的在前 */
+  notify: () => ipcRenderer.invoke('lumen:island-notify-get'),
+  notifyClear: () => ipcRenderer.invoke('lumen:island-notify-clear'),
+  onNotify: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(Array.isArray(d) ? d : []); } catch (err) {} };
+    ipcRenderer.on('lumen:island-notify', h);
+    return () => ipcRenderer.removeListener('lumen:island-notify', h);
+  },
+  onMedia: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d); } catch (err) {} };
+    ipcRenderer.on('lumen:island-media', h);
+    return () => ipcRenderer.removeListener('lumen:island-media', h);
+  },
+  onState: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d); } catch (err) {} };
+    ipcRenderer.on('lumen:island-state', h);
+    return () => ipcRenderer.removeListener('lumen:island-state', h);
+  },
+  /* 智能隐藏开关（全屏 / 浏览器遮住岛时收细线） */
+  setSmart: on => ipcRenderer.invoke('lumen:island-smart', !!on),
+  /* 工作状态上报：主窗口换视图 / AI 忙碌态变化时发，壳中转给岛。
+     act = { kind:'idle'|'page'|'tool'|'task', name, extra? }，非法或 idle 都视为清空 */
+  activity: act => ipcRenderer.send('lumen:island-activity', act),
+  onActivity: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d); } catch (err) {} };
+    ipcRenderer.on('lumen:island-activity', h);
+    return () => ipcRenderer.removeListener('lumen:island-activity', h);
+  },
+  /* 胶囊尺寸是内容自适应的：页面量完报给主进程，热区按实测算。
+     顶部停靠报宽度；左右停靠报长度。 */
+  setCapWidth: w => ipcRenderer.send('lumen:island-cap', Number(w) || 0),
+  /* 拖动：页面只报「按下 / 松手」，光标位移由壳自己读屏幕坐标（弹簧跟手在壳侧） */
+  dragStart: () => ipcRenderer.send('lumen:island-drag', true),
+  dragMove: (dx, dy) => ipcRenderer.send('lumen:island-move', Number(dx) || 0, Number(dy) || 0),
+  dragEnd: () => ipcRenderer.send('lumen:island-drag', false),
+  /* 停靠边：'top' | 'left' | 'right'；岛选项：{ clockSeconds } */
+  setDock: d => ipcRenderer.invoke('lumen:island-dock', String(d || 'top')),
+  setOpt: patch => ipcRenderer.invoke('lumen:island-opt', patch || {}),
+  /* 拖中吸附状态变化：{ locked, silent? }，页面据此画绿描边 / 扫光 */
+  onLock: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d || {}); } catch (err) {} };
+    ipcRenderer.on('lumen:island-lock', h);
+    return () => ipcRenderer.removeListener('lumen:island-lock', h);
+  },
+  /* 停靠边 / 时钟秒数等配置变化（设置页改了、或拖动中换边） */
+  onCfg: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(d || {}); } catch (err) {} };
+    ipcRenderer.on('lumen:island-cfg', h);
+    return () => ipcRenderer.removeListener('lumen:island-cfg', h);
+  },
+  /* 智能隐藏：被前台窗口遮住时收成细线，光标靠近自动还原 */
+  onMin: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = (_e, d) => { try { cb(!!d); } catch (err) {} };
+    ipcRenderer.on('lumen:island-min', h);
+    return () => ipcRenderer.removeListener('lumen:island-min', h);
+  },
+  /* 从全屏隐藏里回来：窗口刚 show 出来，让页面重播一次登场动画 */
+  onEnter: cb => {
+    if (typeof cb !== 'function') return () => {};
+    const h = () => { try { cb(); } catch (err) {} };
+    ipcRenderer.on('lumen:island-enter', h);
+    return () => ipcRenderer.removeListener('lumen:island-enter', h);
+  }
+});
+
+/* 本机 Python 运行时（创意工具的算力后端）。
+ * status(force) → { ok, exe, version, hasPillow, err }
+ * run({ source, args, timeout }) → { ok, result, files:[{name,mime,dataUrl}], ms, log }
+ *   source 必须是构建时内联的自带脚本（主进程会验身份证行），页面不能凭空造脚本；
+ * setExe(path) 手动指定解释器；install(name) 只允许 pillow / numpy。 */
+contextBridge.exposeInMainWorld('lumenPy', {
+  isElectron: true,
+  status: force => ipcRenderer.invoke('lumen:py-status', !!force),
+  run: payload => ipcRenderer.invoke('lumen:py-run', payload || {}),
+  setExe: p => ipcRenderer.invoke('lumen:py-set-exe', String(p || '')),
+  install: name => ipcRenderer.invoke('lumen:py-install', String(name || ''))
 });
 
 /* 屏幕录制：页面拿不到 desktopCapturer，也绕不过捕获授权，全走这里。
