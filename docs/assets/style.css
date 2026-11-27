@@ -238,6 +238,13 @@ img{max-width:100%;display:block}
   font-size:11.5px;font-weight:700;color:#0a0b10;
   background:var(--grad);padding:4px 14px;border-radius:999px;
 }
+/* macOS 占位卡：虚线边 + 弱化文字，一眼看出「还没开放」 */
+.dl-soon{border-style:dashed;border-color:var(--line-2);background:transparent}
+.dl-flag-soon{background:rgba(255,255,255,.16);color:var(--txt-2)}
+.dl-soon h3{color:var(--txt-2)}
+.dl-soon .dl-desc{color:var(--txt-3)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn[disabled]:hover{border-color:var(--line-2);color:var(--txt-2);background:none}
 .dl-card h3{font-size:19px;font-weight:800}
 .dl-size{font-size:13px;color:var(--txt-3);margin-top:4px}
 .dl-desc{font-size:13.5px;color:var(--txt-2);margin:14px 0 22px;min-height:44px}
